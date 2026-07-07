@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  #av-app {
+  .av-app {
     --bg0: #0e1013;
     --panel: #16181c;
     --panel-2: #1e2126;
@@ -22,15 +22,15 @@
   }
   html, body { margin: 0; }
 
-  /* The app is fully self-contained: everything positions against #av-app,
+  /* The app is fully self-contained: everything positions against .av-app,
      never the page viewport - so nothing can hide under a site banner.
      Embedded in Squarespace? Override the height by adding a style tag
-     before this block containing:  #av-app{--av-height:75vh}  */
-  #av-app { position: relative; width: 100%; height: var(--av-height, 100vh);
+     before this block containing:  .av-app{--av-height:75vh}  */
+  .av-app { position: relative; width: 100%; height: var(--av-height, 100vh);
     min-height: 420px; overflow: hidden; background: var(--bg0); color: var(--ink);
     font-family: var(--font-body); }
-  #av-app:fullscreen { --av-height: 100vh; }
-  #av-app canvas { 
+  .av-app:fullscreen { --av-height: 100vh; }
+  .av-app canvas { 
     display: block; 
     position: absolute; 
     top: 0; 
@@ -38,127 +38,127 @@
     width: 100% !important; 
     height: 100% !important; 
 }
-  #av-app button { font-family: inherit; }
-  #av-app :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+  .av-app button { font-family: inherit; }
+  .av-app :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
 
-  #av-app #viewport { position: absolute; inset: 0; overflow: hidden; }
+  .av-app #viewport { position: absolute; inset: 0; overflow: hidden; }
 
   /* ---------- loading ---------- */
-  #av-app #loading { position: absolute; inset: 0; z-index: 100; display: flex; flex-direction: column; gap: 14px;
+  .av-app #loading { position: absolute; inset: 0; z-index: 100; display: flex; flex-direction: column; gap: 14px;
     align-items: center; justify-content: center; background: var(--bg0); transition: opacity .4s; }
-  #av-app #loading.done { opacity: 0; pointer-events: none; }
-  #av-app #loading .bar { width: min(280px, 60%); height: 3px; background: var(--panel-2); border-radius: 2px; overflow: hidden; }
-  #av-app #loading .bar i { display: block; height: 100%; width: 0%; background: var(--accent); transition: width .2s; }
-  #av-app #loading .pct { font-family: var(--font-mono); font-size: .75rem; color: var(--ink-soft); }
-  #av-app #loading .err { color: #ff6b5e; font-size: .85rem; max-width: 80%; text-align: center; display: none; }
+  .av-app #loading.done { opacity: 0; pointer-events: none; }
+  .av-app #loading .bar { width: min(280px, 60%); height: 3px; background: var(--panel-2); border-radius: 2px; overflow: hidden; }
+  .av-app #loading .bar i { display: block; height: 100%; width: 0%; background: var(--accent); transition: width .2s; }
+  .av-app #loading .pct { font-family: var(--font-mono); font-size: .75rem; color: var(--ink-soft); }
+  .av-app #loading .err { color: #ff6b5e; font-size: .85rem; max-width: 80%; text-align: center; display: none; }
 
   /* ---------- header ---------- */
-  #av-app #hdr { position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+  .av-app #hdr { position: absolute; top: 0; left: 0; right: 0; z-index: 20;
     display: flex; align-items: center; gap: 14px; padding: 12px 16px;
     background: linear-gradient(to bottom, rgba(14,16,19,.92), rgba(14,16,19,0));
     pointer-events: none; }
-  #av-app #hdr > * { pointer-events: auto; }
-  #av-app #hdr .product { font-weight: 700; font-size: 1rem; letter-spacing: .01em; }
-  #av-app #hdr .sub { font-size: .85rem; color: var(--ink-soft); border-left: 1px solid var(--line-strong); padding-left: 14px; }
-  #av-app #hdr .stepnum { margin-left: auto; font-family: var(--font-mono); font-size: .78rem; color: var(--ink-soft); }
-  #av-app #hdr .stepnum b { color: var(--accent); font-weight: 500; }
-  #av-app .hdrbtn { font-size: .72rem; font-family: var(--font-mono); cursor: pointer;
+  .av-app #hdr > * { pointer-events: auto; }
+  .av-app #hdr .product { font-weight: 700; font-size: 1rem; letter-spacing: .01em; }
+  .av-app #hdr .sub { font-size: .85rem; color: var(--ink-soft); border-left: 1px solid var(--line-strong); padding-left: 14px; }
+  .av-app #hdr .stepnum { margin-left: auto; font-family: var(--font-mono); font-size: .78rem; color: var(--ink-soft); }
+  .av-app #hdr .stepnum b { color: var(--accent); font-weight: 500; }
+  .av-app .hdrbtn { font-size: .72rem; font-family: var(--font-mono); cursor: pointer;
     padding: 5px 12px; border: 1px solid var(--line-strong); border-radius: 999px;
     background: var(--panel); color: var(--ink-soft); }
-  #av-app #authorToggle { display: none; }
-  #av-app #authorToggle[data-on="1"] { background: var(--accent); border-color: var(--accent); color: #16181c; }
+  .av-app #authorToggle { display: none; }
+  .av-app #authorToggle[data-on="1"] { background: var(--accent); border-color: var(--accent); color: #16181c; }
 
   /* ---------- bottom bar ---------- */
-  #av-app #nav { position: absolute; left: 0; right: 0; bottom: 0; z-index: 20;
+  .av-app #nav { position: absolute; left: 0; right: 0; bottom: 0; z-index: 20;
     display: flex; align-items: center; gap: 12px; padding: 14px 16px 18px;
     background: linear-gradient(to top, rgba(14,16,19,.92), rgba(14,16,19,0)); }
-  #av-app .navbtn { flex: 0 0 auto; min-width: 96px; padding: 13px 20px; font-size: .9rem; font-weight: 600; cursor: pointer;
+  .av-app .navbtn { flex: 0 0 auto; min-width: 96px; padding: 13px 20px; font-size: .9rem; font-weight: 600; cursor: pointer;
     border: 1px solid var(--line-strong); border-radius: 10px; background: var(--panel); color: var(--ink);
     transition: border-color .15s, background .15s; touch-action: manipulation; }
-  #av-app .navbtn:hover:not(:disabled) { border-color: var(--accent); }
-  #av-app .navbtn:disabled { opacity: .35; cursor: default; }
-  #av-app #next { background: var(--accent); border-color: var(--accent); color: #16181c; }
-  #av-app #next:hover:not(:disabled) { background: #ffa033; }
-  #av-app #rail { flex: 1; display: flex; align-items: center; gap: 5px; min-width: 0; padding: 0 4px; }
-  #av-app #rail .tick { flex: 1; height: 4px; border-radius: 2px; background: var(--panel-2); border: 0; padding: 0;
+  .av-app .navbtn:hover:not(:disabled) { border-color: var(--accent); }
+  .av-app .navbtn:disabled { opacity: .35; cursor: default; }
+  .av-app #next { background: var(--accent); border-color: var(--accent); color: #16181c; }
+  .av-app #next:hover:not(:disabled) { background: #ffa033; }
+  .av-app #rail { flex: 1; display: flex; align-items: center; gap: 5px; min-width: 0; padding: 0 4px; }
+  .av-app #rail .tick { flex: 1; height: 4px; border-radius: 2px; background: var(--panel-2); border: 0; padding: 0;
     cursor: pointer; transition: background .2s, height .2s; min-width: 4px; }
-  #av-app #rail .tick.done { background: var(--line-strong); }
-  #av-app #rail .tick.cur { background: var(--accent); height: 8px; }
-  #av-app #rail .tick:hover { background: var(--ink-faint); }
-  #av-app #rail .tick.cur:hover { background: var(--accent); }
+  .av-app #rail .tick.done { background: var(--line-strong); }
+  .av-app #rail .tick.cur { background: var(--accent); height: 8px; }
+  .av-app #rail .tick:hover { background: var(--ink-faint); }
+  .av-app #rail .tick.cur:hover { background: var(--accent); }
 
   /* ---------- reset view pill ---------- */
-  #av-app #resetView { position: absolute; z-index: 20; left: 50%; transform: translateX(-50%); bottom: 84px;
+  .av-app #resetView { position: absolute; z-index: 20; left: 50%; transform: translateX(-50%); bottom: 84px;
     display: none; align-items: center; gap: 8px; cursor: pointer;
     font-size: .8rem; font-weight: 500; padding: 9px 16px;
     border: 1px solid var(--line-strong); border-radius: 999px;
     background: var(--panel); color: var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,.4); }
-  #av-app #resetView.show { display: inline-flex; }
-  #av-app #resetView::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  .av-app #resetView.show { display: inline-flex; }
+  .av-app #resetView::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
 
   /* ---------- info drawer ---------- */
-  #av-app #drawer { position: absolute; top: 56px; right: 12px; z-index: 20;
+  .av-app #drawer { position: absolute; top: 56px; right: 12px; z-index: 20;
     width: min(300px, 78%); max-height: calc(100% - 150px);
     display: flex; flex-direction: column; align-items: flex-end; }
-  #av-app #drawerToggle { font-size: .78rem; font-weight: 500; cursor: pointer;
+  .av-app #drawerToggle { font-size: .78rem; font-weight: 500; cursor: pointer;
     display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px;
     border: 1px solid var(--line-strong); border-radius: 999px; background: var(--panel); color: var(--ink); }
-  #av-app #drawerBody { width: 100%; margin-top: 8px; overflow: auto; background: var(--panel);
+  .av-app #drawerBody { width: 100%; margin-top: 8px; overflow: auto; background: var(--panel);
     border: 1px solid var(--line-strong); border-radius: 12px; padding: 6px 14px 12px;
     box-shadow: 0 18px 48px rgba(0,0,0,.4); }
-  #av-app #drawerBody[hidden] { display: none; }
-  #av-app #drawer details { border-bottom: 1px solid var(--line); }
-  #av-app #drawer details:last-child { border-bottom: 0; }
-  #av-app #drawer summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between;
+  .av-app #drawerBody[hidden] { display: none; }
+  .av-app #drawer details { border-bottom: 1px solid var(--line); }
+  .av-app #drawer details:last-child { border-bottom: 0; }
+  .av-app #drawer summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between;
     padding: 11px 2px; font-size: .72rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
-  #av-app #drawer summary::-webkit-details-marker { display: none; }
-  #av-app #drawer summary::after { content: "+"; font-family: var(--font-mono); color: var(--ink-faint); }
-  #av-app #drawer details[open] summary::after { content: "\2013"; }
-  #av-app #drawer .body { padding: 0 2px 12px; font-size: .9rem; line-height: 1.5; color: var(--ink); }
-  #av-app #drawer .body ul { margin: 0; padding-left: 18px; }
-  #av-app #drawer .body li { margin: 3px 0; }
+  .av-app #drawer summary::-webkit-details-marker { display: none; }
+  .av-app #drawer summary::after { content: "+"; font-family: var(--font-mono); color: var(--ink-faint); }
+  .av-app #drawer details[open] summary::after { content: "\2013"; }
+  .av-app #drawer .body { padding: 0 2px 12px; font-size: .9rem; line-height: 1.5; color: var(--ink); }
+  .av-app #drawer .body ul { margin: 0; padding-left: 18px; }
+  .av-app #drawer .body li { margin: 3px 0; }
 
   /* ---------- author panel ---------- */
-  #av-app #author { position: absolute; top: 56px; left: 12px; z-index: 30;
+  .av-app #author { position: absolute; top: 56px; left: 12px; z-index: 30;
     width: min(340px, 88%); max-height: calc(100% - 150px); overflow: auto;
     background: var(--panel); border: 1px solid var(--accent); border-radius: 12px;
     padding: 14px; box-shadow: 0 18px 48px rgba(0,0,0,.5); }
-  #av-app #author[hidden] { display: none; }
-  #av-app #author h2 { margin: 0 0 2px; font-size: .95rem; font-weight: 700; }
-  #av-app #author .hint { font-size: .72rem; color: var(--ink-faint); margin: 0 0 12px; }
-  #av-app #author section { border-top: 1px solid var(--line); padding: 10px 0; }
-  #av-app #author .sec-lbl { font-size: .64rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
-  #av-app #author .cam-read { font-family: var(--font-mono); font-size: .68rem; color: var(--ink-soft); line-height: 1.6; white-space: pre; }
-  #av-app #author label.row { display: flex; align-items: center; gap: 8px; font-size: .82rem; padding: 4px 0; }
-  #av-app #author select, #av-app #author input[type=number] { font: inherit; font-size: .8rem; background: var(--panel-2); color: var(--ink);
+  .av-app #author[hidden] { display: none; }
+  .av-app #author h2 { margin: 0 0 2px; font-size: .95rem; font-weight: 700; }
+  .av-app #author .hint { font-size: .72rem; color: var(--ink-faint); margin: 0 0 12px; }
+  .av-app #author section { border-top: 1px solid var(--line); padding: 10px 0; }
+  .av-app #author .sec-lbl { font-size: .64rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
+  .av-app #author .cam-read { font-family: var(--font-mono); font-size: .68rem; color: var(--ink-soft); line-height: 1.6; white-space: pre; }
+  .av-app #author label.row { display: flex; align-items: center; gap: 8px; font-size: .82rem; padding: 4px 0; }
+  .av-app #author select, .av-app #author input[type=number] { font: inherit; font-size: .8rem; background: var(--panel-2); color: var(--ink);
     border: 1px solid var(--line-strong); border-radius: 6px; padding: 5px 8px; }
-  #av-app #author input[type=color] { width: 44px; height: 28px; padding: 2px; border: 1px solid var(--line-strong);
+  .av-app #author input[type=color] { width: 44px; height: 28px; padding: 2px; border: 1px solid var(--line-strong);
     border-radius: 6px; background: var(--panel-2); cursor: pointer; }
-  #av-app .ptable { width: 100%; border-collapse: collapse; font-size: .78rem; }
-  #av-app .ptable th { font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint);
+  .av-app .ptable { width: 100%; border-collapse: collapse; font-size: .78rem; }
+  .av-app .ptable th { font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint);
     text-align: left; padding: 2px 4px 6px; }
-  #av-app .ptable th:nth-child(2), #av-app .ptable th:nth-child(3) { text-align: center; }
-  #av-app .ptable td { padding: 4px; border-top: 1px solid var(--line); }
-  #av-app .ptable td:first-child { font-family: var(--font-mono); font-size: .7rem; word-break: break-all; }
-  #av-app .ptable td:nth-child(2), #av-app .ptable td:nth-child(3) { text-align: center; }
-  #av-app .table-empty { font-size: .74rem; color: var(--ink-faint); font-style: italic; padding: 4px 0; }
-  #av-app .abtn { width: 100%; margin-top: 8px; font-size: .82rem; font-weight: 600; cursor: pointer; padding: 10px;
+  .av-app .ptable th:nth-child(2), .av-app .ptable th:nth-child(3) { text-align: center; }
+  .av-app .ptable td { padding: 4px; border-top: 1px solid var(--line); }
+  .av-app .ptable td:first-child { font-family: var(--font-mono); font-size: .7rem; word-break: break-all; }
+  .av-app .ptable td:nth-child(2), .av-app .ptable td:nth-child(3) { text-align: center; }
+  .av-app .table-empty { font-size: .74rem; color: var(--ink-faint); font-style: italic; padding: 4px 0; }
+  .av-app .abtn { width: 100%; margin-top: 8px; font-size: .82rem; font-weight: 600; cursor: pointer; padding: 10px;
     border: 1px solid var(--accent); border-radius: 8px; background: var(--accent); color: #16181c; }
-  #av-app .abtn.ghost { background: transparent; color: var(--accent); }
-  #av-app #capOut { width: 100%; margin-top: 8px; font-family: var(--font-mono); font-size: .66rem; line-height: 1.5;
+  .av-app .abtn.ghost { background: transparent; color: var(--accent); }
+  .av-app #capOut { width: 100%; margin-top: 8px; font-family: var(--font-mono); font-size: .66rem; line-height: 1.5;
     background: var(--panel-2); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 8px;
     padding: 8px; resize: vertical; min-height: 120px; box-sizing: border-box; }
-  #av-app #copyMsg { font-family: var(--font-mono); font-size: .68rem; color: var(--accent); min-height: 1em; text-align: center; margin-top: 4px; }
+  .av-app #copyMsg { font-family: var(--font-mono); font-size: .68rem; color: var(--accent); min-height: 1em; text-align: center; margin-top: 4px; }
 
   @media (max-width: 640px) {
-    #av-app #hdr .sub { display: none; }
-    #av-app .navbtn { min-width: 72px; padding: 12px 14px; }
+    .av-app #hdr .sub { display: none; }
+    .av-app .navbtn { min-width: 72px; padding: 12px 14px; }
   }
 </style>
 </head>
 <body>
 
-<div id="av-app">
+<div class="av-app">
   <div id="viewport"></div>
 
   <div id="loading">
@@ -255,6 +255,8 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
+// Wrap EVERYTHING in an IIFE to isolate the variables
+(() => {
 /* =========================================================================
    CONFIG - swap MODEL_URL per product; STEPS will later come from
    Google Sheets via Apps Script. For now: dummy data.
@@ -319,8 +321,15 @@ let deviated = false;
 let authorMode = false;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-const app = document.getElementById('av-app');
-const $ = id => document.getElementById(id);
+
+
+// Find the first .av-app container on the page that hasn't been claimed yet
+const app = Array.from(document.querySelectorAll('.av-app')).find(el => !el.dataset.claimed);
+if (!app) return; // Failsafe
+app.dataset.claimed = "true"; // Mark this container as taken by this script instance
+
+// Scope our element selector strictly to THIS specific container
+const $ = id => app.querySelector('#' + id);
 const isArrowName = n => n.toLowerCase().startsWith('arrow');
 
 init();
@@ -754,6 +763,8 @@ function updateCamReadout() {
     'tgt  ' + r3(controls.target.x) + ', ' + r3(controls.target.y) + ', ' + r3(controls.target.z) + '\n' +
     'fov  ' + r3(camera.fov);
 }
+
+})(); // <-- Closes the IIFE sandbox
 </script>
 </body>
 </html>
