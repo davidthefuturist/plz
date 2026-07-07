@@ -7,8 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --bg0: #0e1013;         /* viewport clear color */
+  #av-app {
+    --bg0: #0e1013;
     --panel: #16181c;
     --panel-2: #1e2126;
     --line: #2a2e35;
@@ -16,290 +16,325 @@
     --ink: #e8e6e1;
     --ink-soft: #9aa0a8;
     --ink-faint: #6b7078;
-    --accent: #ff8a00;      /* safety orange */
-    --accent-soft: rgba(255,138,0,.14);
+    --accent: #ff8a00;
     --font-body: 'Archivo', system-ui, sans-serif;
     --font-mono: 'JetBrains Mono', ui-monospace, monospace;
   }
-  * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg0); color: var(--ink); font-family: var(--font-body); }
-  canvas { display: block; }
-  button { font-family: inherit; }
-  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+  html, body { margin: 0; }
 
-  /* ---------- viewport ---------- */
-  #viewport { position: fixed; inset: 0; }
+  /* The app is fully self-contained: everything positions against #av-app,
+     never the page viewport - so nothing can hide under a site banner.
+     Embedded in Squarespace? Override the height by adding a style tag
+     before this block containing:  #av-app{--av-height:75vh}  */
+  #av-app { position: relative; width: 100%; height: var(--av-height, 100vh);
+    min-height: 420px; overflow: hidden; background: var(--bg0); color: var(--ink);
+    font-family: var(--font-body); }
+  #av-app:fullscreen { --av-height: 100vh; }
+  #av-app canvas { 
+    display: block; 
+    position: absolute; 
+    top: 0; 
+    left: 0; 
+    width: 100% !important; 
+    height: 100% !important; 
+}
+  #av-app button { font-family: inherit; }
+  #av-app :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+  #av-app #viewport { position: absolute; inset: 0; overflow: hidden; }
 
   /* ---------- loading ---------- */
-  #loading { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; gap: 14px;
+  #av-app #loading { position: absolute; inset: 0; z-index: 100; display: flex; flex-direction: column; gap: 14px;
     align-items: center; justify-content: center; background: var(--bg0); transition: opacity .4s; }
-  #loading.done { opacity: 0; pointer-events: none; }
-  #loading .bar { width: min(280px, 60vw); height: 3px; background: var(--panel-2); border-radius: 2px; overflow: hidden; }
-  #loading .bar i { display: block; height: 100%; width: 0%; background: var(--accent); transition: width .2s; }
-  #loading .pct { font-family: var(--font-mono); font-size: .75rem; color: var(--ink-soft); }
-  #loading .err { color: #ff6b5e; font-size: .85rem; max-width: 80vw; text-align: center; display: none; }
+  #av-app #loading.done { opacity: 0; pointer-events: none; }
+  #av-app #loading .bar { width: min(280px, 60%); height: 3px; background: var(--panel-2); border-radius: 2px; overflow: hidden; }
+  #av-app #loading .bar i { display: block; height: 100%; width: 0%; background: var(--accent); transition: width .2s; }
+  #av-app #loading .pct { font-family: var(--font-mono); font-size: .75rem; color: var(--ink-soft); }
+  #av-app #loading .err { color: #ff6b5e; font-size: .85rem; max-width: 80%; text-align: center; display: none; }
 
   /* ---------- header ---------- */
-  #hdr { position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+  #av-app #hdr { position: absolute; top: 0; left: 0; right: 0; z-index: 20;
     display: flex; align-items: center; gap: 14px; padding: 12px 16px;
     background: linear-gradient(to bottom, rgba(14,16,19,.92), rgba(14,16,19,0));
     pointer-events: none; }
-  #hdr > * { pointer-events: auto; }
-  #hdr .product { font-weight: 700; font-size: 1rem; letter-spacing: .01em; }
-  #hdr .sub { font-size: .85rem; color: var(--ink-soft); border-left: 1px solid var(--line-strong); padding-left: 14px; }
-  #hdr .stepnum { margin-left: auto; font-family: var(--font-mono); font-size: .78rem; color: var(--ink-soft); }
-  #hdr .stepnum b { color: var(--accent); font-weight: 500; }
-  #authorToggle { display: none; font-size: .72rem; font-family: var(--font-mono); cursor: pointer;
+  #av-app #hdr > * { pointer-events: auto; }
+  #av-app #hdr .product { font-weight: 700; font-size: 1rem; letter-spacing: .01em; }
+  #av-app #hdr .sub { font-size: .85rem; color: var(--ink-soft); border-left: 1px solid var(--line-strong); padding-left: 14px; }
+  #av-app #hdr .stepnum { margin-left: auto; font-family: var(--font-mono); font-size: .78rem; color: var(--ink-soft); }
+  #av-app #hdr .stepnum b { color: var(--accent); font-weight: 500; }
+  #av-app .hdrbtn { font-size: .72rem; font-family: var(--font-mono); cursor: pointer;
     padding: 5px 12px; border: 1px solid var(--line-strong); border-radius: 999px;
     background: var(--panel); color: var(--ink-soft); }
-  #authorToggle[data-on="1"] { background: var(--accent); border-color: var(--accent); color: #16181c; }
+  #av-app #authorToggle { display: none; }
+  #av-app #authorToggle[data-on="1"] { background: var(--accent); border-color: var(--accent); color: #16181c; }
 
-  /* ---------- bottom bar: prev / step rail / next ---------- */
-  #nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+  /* ---------- bottom bar ---------- */
+  #av-app #nav { position: absolute; left: 0; right: 0; bottom: 0; z-index: 20;
     display: flex; align-items: center; gap: 12px; padding: 14px 16px 18px;
     background: linear-gradient(to top, rgba(14,16,19,.92), rgba(14,16,19,0)); }
-  .navbtn { flex: 0 0 auto; min-width: 96px; padding: 13px 20px; font-size: .9rem; font-weight: 600; cursor: pointer;
+  #av-app .navbtn { flex: 0 0 auto; min-width: 96px; padding: 13px 20px; font-size: .9rem; font-weight: 600; cursor: pointer;
     border: 1px solid var(--line-strong); border-radius: 10px; background: var(--panel); color: var(--ink);
     transition: border-color .15s, background .15s; touch-action: manipulation; }
-  .navbtn:hover:not(:disabled) { border-color: var(--accent); }
-  .navbtn:disabled { opacity: .35; cursor: default; }
-  #next { background: var(--accent); border-color: var(--accent); color: #16181c; }
-  #next:hover:not(:disabled) { background: #ffa033; }
-  /* step rail — ticks like stations on the line */
-  #rail { flex: 1; display: flex; align-items: center; gap: 5px; min-width: 0; padding: 0 4px; }
-  #rail .tick { flex: 1; height: 4px; border-radius: 2px; background: var(--panel-2); border: 0; padding: 0;
+  #av-app .navbtn:hover:not(:disabled) { border-color: var(--accent); }
+  #av-app .navbtn:disabled { opacity: .35; cursor: default; }
+  #av-app #next { background: var(--accent); border-color: var(--accent); color: #16181c; }
+  #av-app #next:hover:not(:disabled) { background: #ffa033; }
+  #av-app #rail { flex: 1; display: flex; align-items: center; gap: 5px; min-width: 0; padding: 0 4px; }
+  #av-app #rail .tick { flex: 1; height: 4px; border-radius: 2px; background: var(--panel-2); border: 0; padding: 0;
     cursor: pointer; transition: background .2s, height .2s; min-width: 4px; }
-  #rail .tick.done { background: var(--line-strong); }
-  #rail .tick.cur { background: var(--accent); height: 8px; }
-  #rail .tick:hover { background: var(--ink-faint); }
-  #rail .tick.cur:hover { background: var(--accent); }
+  #av-app #rail .tick.done { background: var(--line-strong); }
+  #av-app #rail .tick.cur { background: var(--accent); height: 8px; }
+  #av-app #rail .tick:hover { background: var(--ink-faint); }
+  #av-app #rail .tick.cur:hover { background: var(--accent); }
 
   /* ---------- reset view pill ---------- */
-  #resetView { position: fixed; z-index: 20; left: 50%; transform: translateX(-50%); bottom: 84px;
+  #av-app #resetView { position: absolute; z-index: 20; left: 50%; transform: translateX(-50%); bottom: 84px;
     display: none; align-items: center; gap: 8px; cursor: pointer;
     font-size: .8rem; font-weight: 500; padding: 9px 16px;
     border: 1px solid var(--line-strong); border-radius: 999px;
     background: var(--panel); color: var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,.4); }
-  #resetView.show { display: inline-flex; }
-  #resetView::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+  #av-app #resetView.show { display: inline-flex; }
+  #av-app #resetView::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
 
-  /* ---------- info drawer (directions / parts / tools) ---------- */
-  #drawer { position: fixed; top: 64px; right: 16px; z-index: 20;
-    width: min(320px, 88vw); max-height: calc(100vh - 170px);
-    display: flex; flex-direction: column; }
-  #drawerToggle { align-self: flex-end; font-size: .78rem; font-weight: 500; cursor: pointer;
+  /* ---------- info drawer ---------- */
+  #av-app #drawer { position: absolute; top: 56px; right: 12px; z-index: 20;
+    width: min(300px, 78%); max-height: calc(100% - 150px);
+    display: flex; flex-direction: column; align-items: flex-end; }
+  #av-app #drawerToggle { font-size: .78rem; font-weight: 500; cursor: pointer;
     display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px;
     border: 1px solid var(--line-strong); border-radius: 999px; background: var(--panel); color: var(--ink); }
-  #drawerBody { margin-top: 8px; overflow: auto; background: var(--panel);
+  #av-app #drawerBody { width: 100%; margin-top: 8px; overflow: auto; background: var(--panel);
     border: 1px solid var(--line-strong); border-radius: 12px; padding: 6px 14px 12px;
     box-shadow: 0 18px 48px rgba(0,0,0,.4); }
-  #drawerBody[hidden] { display: none; }
-  #drawer details { border-bottom: 1px solid var(--line); }
-  #drawer details:last-child { border-bottom: 0; }
-  #drawer summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between;
+  #av-app #drawerBody[hidden] { display: none; }
+  #av-app #drawer details { border-bottom: 1px solid var(--line); }
+  #av-app #drawer details:last-child { border-bottom: 0; }
+  #av-app #drawer summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between;
     padding: 11px 2px; font-size: .72rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
-  #drawer summary::-webkit-details-marker { display: none; }
-  #drawer summary::after { content: "+"; font-family: var(--font-mono); color: var(--ink-faint); }
-  #drawer details[open] summary::after { content: "–"; }
-  #drawer .body { padding: 0 2px 12px; font-size: .9rem; line-height: 1.5; color: var(--ink); }
-  #drawer .body ul { margin: 0; padding-left: 18px; }
-  #drawer .body li { margin: 3px 0; }
+  #av-app #drawer summary::-webkit-details-marker { display: none; }
+  #av-app #drawer summary::after { content: "+"; font-family: var(--font-mono); color: var(--ink-faint); }
+  #av-app #drawer details[open] summary::after { content: "\2013"; }
+  #av-app #drawer .body { padding: 0 2px 12px; font-size: .9rem; line-height: 1.5; color: var(--ink); }
+  #av-app #drawer .body ul { margin: 0; padding-left: 18px; }
+  #av-app #drawer .body li { margin: 3px 0; }
 
   /* ---------- author panel ---------- */
-  #author { position: fixed; top: 64px; left: 16px; z-index: 30;
-    width: min(340px, 90vw); max-height: calc(100vh - 170px); overflow: auto;
+  #av-app #author { position: absolute; top: 56px; left: 12px; z-index: 30;
+    width: min(340px, 88%); max-height: calc(100% - 150px); overflow: auto;
     background: var(--panel); border: 1px solid var(--accent); border-radius: 12px;
     padding: 14px; box-shadow: 0 18px 48px rgba(0,0,0,.5); }
-  #author[hidden] { display: none; }
-  #author h2 { margin: 0 0 2px; font-size: .95rem; font-weight: 700; }
-  #author .hint { font-size: .72rem; color: var(--ink-faint); margin: 0 0 12px; }
-  #author section { border-top: 1px solid var(--line); padding: 10px 0; }
-  #author .sec-lbl { font-size: .64rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
-  #author .cam-read { font-family: var(--font-mono); font-size: .68rem; color: var(--ink-soft); line-height: 1.6; white-space: pre; }
-  #author label.row { display: flex; align-items: center; gap: 8px; font-size: .82rem; padding: 4px 0; }
-  #author select, #author input[type=number] { font: inherit; font-size: .8rem; background: var(--panel-2); color: var(--ink);
+  #av-app #author[hidden] { display: none; }
+  #av-app #author h2 { margin: 0 0 2px; font-size: .95rem; font-weight: 700; }
+  #av-app #author .hint { font-size: .72rem; color: var(--ink-faint); margin: 0 0 12px; }
+  #av-app #author section { border-top: 1px solid var(--line); padding: 10px 0; }
+  #av-app #author .sec-lbl { font-size: .64rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
+  #av-app #author .cam-read { font-family: var(--font-mono); font-size: .68rem; color: var(--ink-soft); line-height: 1.6; white-space: pre; }
+  #av-app #author label.row { display: flex; align-items: center; gap: 8px; font-size: .82rem; padding: 4px 0; }
+  #av-app #author select, #av-app #author input[type=number] { font: inherit; font-size: .8rem; background: var(--panel-2); color: var(--ink);
     border: 1px solid var(--line-strong); border-radius: 6px; padding: 5px 8px; }
-  #partsTable { width: 100%; border-collapse: collapse; font-size: .78rem; }
-  #partsTable th { font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint);
+  #av-app #author input[type=color] { width: 44px; height: 28px; padding: 2px; border: 1px solid var(--line-strong);
+    border-radius: 6px; background: var(--panel-2); cursor: pointer; }
+  #av-app .ptable { width: 100%; border-collapse: collapse; font-size: .78rem; }
+  #av-app .ptable th { font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint);
     text-align: left; padding: 2px 4px 6px; }
-  #partsTable th:nth-child(2), #partsTable th:nth-child(3) { text-align: center; }
-  #partsTable td { padding: 4px; border-top: 1px solid var(--line); }
-  #partsTable td:first-child { font-family: var(--font-mono); font-size: .7rem; word-break: break-all; }
-  #partsTable td:nth-child(2), #partsTable td:nth-child(3) { text-align: center; }
-  .abtn { width: 100%; margin-top: 8px; font-size: .82rem; font-weight: 600; cursor: pointer; padding: 10px;
+  #av-app .ptable th:nth-child(2), #av-app .ptable th:nth-child(3) { text-align: center; }
+  #av-app .ptable td { padding: 4px; border-top: 1px solid var(--line); }
+  #av-app .ptable td:first-child { font-family: var(--font-mono); font-size: .7rem; word-break: break-all; }
+  #av-app .ptable td:nth-child(2), #av-app .ptable td:nth-child(3) { text-align: center; }
+  #av-app .table-empty { font-size: .74rem; color: var(--ink-faint); font-style: italic; padding: 4px 0; }
+  #av-app .abtn { width: 100%; margin-top: 8px; font-size: .82rem; font-weight: 600; cursor: pointer; padding: 10px;
     border: 1px solid var(--accent); border-radius: 8px; background: var(--accent); color: #16181c; }
-  .abtn.ghost { background: transparent; color: var(--accent); }
-  #capOut { width: 100%; margin-top: 8px; font-family: var(--font-mono); font-size: .66rem; line-height: 1.5;
+  #av-app .abtn.ghost { background: transparent; color: var(--accent); }
+  #av-app #capOut { width: 100%; margin-top: 8px; font-family: var(--font-mono); font-size: .66rem; line-height: 1.5;
     background: var(--panel-2); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 8px;
-    padding: 8px; resize: vertical; min-height: 120px; }
-  #copyMsg { font-family: var(--font-mono); font-size: .68rem; color: var(--accent); min-height: 1em; text-align: center; margin-top: 4px; }
+    padding: 8px; resize: vertical; min-height: 120px; box-sizing: border-box; }
+  #av-app #copyMsg { font-family: var(--font-mono); font-size: .68rem; color: var(--accent); min-height: 1em; text-align: center; margin-top: 4px; }
 
   @media (max-width: 640px) {
-    #hdr .sub { display: none; }
-    .navbtn { min-width: 72px; padding: 12px 14px; }
-    #drawer { top: 56px; }
-  }
-  @media (prefers-reduced-motion: reduce) {
-    #loading { transition: none; }
+    #av-app #hdr .sub { display: none; }
+    #av-app .navbtn { min-width: 72px; padding: 12px 14px; }
   }
 </style>
 </head>
 <body>
 
-<div id="viewport"></div>
+<div id="av-app">
+  <div id="viewport"></div>
 
-<div id="loading">
-  <div class="bar"><i id="loadBar"></i></div>
-  <div class="pct" id="loadPct">Loading model…</div>
-  <div class="err" id="loadErr"></div>
-</div>
-
-<header id="hdr">
-  <span class="product" id="hProduct">—</span>
-  <span class="sub" id="hSub">—</span>
-  <span class="stepnum" id="hStep">STEP <b>–</b> of –</span>
-  <button id="authorToggle" title="Toggle author mode">AUTHOR</button>
-</header>
-
-<button id="resetView">Reset view</button>
-
-<aside id="drawer">
-  <button id="drawerToggle" aria-expanded="true">Step info <span id="drawerChevron">▾</span></button>
-  <div id="drawerBody">
-    <details open>
-      <summary>Directions</summary>
-      <div class="body" id="dDirections">—</div>
-    </details>
-    <details open>
-      <summary>Parts needed</summary>
-      <div class="body"><ul id="dParts"></ul></div>
-    </details>
-    <details>
-      <summary>Tools needed</summary>
-      <div class="body"><ul id="dTools"></ul></div>
-    </details>
+  <div id="loading">
+    <div class="bar"><i id="loadBar"></i></div>
+    <div class="pct" id="loadPct">Loading model&hellip;</div>
+    <div class="err" id="loadErr"></div>
   </div>
-</aside>
 
-<aside id="author" hidden>
-  <h2>Author mode</h2>
-  <p class="hint">Orbit to the exact view a tech should see, choose parts &amp; options, then Capture.</p>
+  <header id="hdr">
+    <span class="product" id="hProduct">&mdash;</span>
+    <span class="sub" id="hSub">&mdash;</span>
+    <span class="stepnum" id="hStep">STEP <b>&ndash;</b> of &ndash;</span>
+    <button class="hdrbtn" id="authorToggle" title="Toggle author mode">AUTHOR</button>
+    <button class="hdrbtn" id="fsToggle" title="Toggle fullscreen">&#x26F6; FULL</button>
+  </header>
 
-  <section>
-    <div class="sec-lbl">Live camera</div>
-    <div class="cam-read" id="camRead">—</div>
-  </section>
+  <button id="resetView">Reset view</button>
 
-  <section>
-    <div class="sec-lbl">Step options</div>
-    <label class="row"><input type="checkbox" id="aControls" checked> Allow orbit for techs (controlsEnabled)</label>
-    <label class="row">Transition
-      <select id="aTransition">
-        <option value="smooth">smooth</option>
-        <option value="instant">instant</option>
-      </select>
-    </label>
-    <label class="row">FOV <input type="number" id="aFov" min="20" max="100" step="1" value="50" style="width:70px"></label>
-  </section>
+  <aside id="drawer">
+    <button id="drawerToggle" aria-expanded="true">Step info <span id="drawerChevron">&#9662;</span></button>
+    <div id="drawerBody">
+      <details open>
+        <summary>Directions</summary>
+        <div class="body" id="dDirections">&mdash;</div>
+      </details>
+      <details open>
+        <summary>Parts needed</summary>
+        <div class="body"><ul id="dParts"></ul></div>
+      </details>
+      <details>
+        <summary>Tools needed</summary>
+        <div class="body"><ul id="dTools"></ul></div>
+      </details>
+    </div>
+  </aside>
 
-  <section>
-    <div class="sec-lbl">Parts (show / highlight)</div>
-    <table id="partsTable">
-      <thead><tr><th>Mesh</th><th>Show</th><th>Hi-lite</th></tr></thead>
-      <tbody id="partsRows"></tbody>
-    </table>
-    <label class="row" style="margin-top:8px">Arrow mesh
-      <select id="aArrow"><option value="">none</option></select>
-    </label>
-    <button class="abtn ghost" id="aPreview">Preview these selections</button>
-  </section>
+  <aside id="author" hidden>
+    <h2>Author mode</h2>
+    <p class="hint">Orbit to the exact view a tech should see, choose parts &amp; options, then Capture.</p>
 
-  <section>
-    <div class="sec-lbl">Capture</div>
-    <button class="abtn" id="aCapture">Capture view → JSON</button>
-    <textarea id="capOut" spellcheck="false" placeholder="Captured step JSON appears here — paste into your sheet's camera/step columns."></textarea>
-    <button class="abtn ghost" id="aCopy">Copy JSON</button>
-    <div id="copyMsg"></div>
-  </section>
-</aside>
+    <section>
+      <div class="sec-lbl">Live camera</div>
+      <div class="cam-read" id="camRead">&mdash;</div>
+    </section>
 
-<nav id="nav">
-  <button class="navbtn" id="prev">‹ Prev</button>
-  <div id="rail" role="tablist" aria-label="Steps"></div>
-  <button class="navbtn" id="next">Next ›</button>
-</nav>
+    <section>
+      <div class="sec-lbl">Step options</div>
+      <label class="row"><input type="checkbox" id="aControls" checked> Allow orbit for techs (controlsEnabled)</label>
+      <label class="row">Transition
+        <select id="aTransition">
+          <option value="smooth">smooth</option>
+          <option value="instant">instant</option>
+        </select>
+      </label>
+      <label class="row">FOV <input type="number" id="aFov" min="20" max="100" step="1" value="50" style="width:70px"> <span style="font-size:.68rem;color:var(--ink-faint)">applies live</span></label>
+      <label class="row">Background <input type="color" id="aBg" value="#0e1013"> <span style="font-size:.68rem;color:var(--ink-faint)">applies live</span></label>
+    </section>
+
+    <section>
+      <div class="sec-lbl">Parts (show / highlight)</div>
+      <table class="ptable">
+        <thead><tr><th>Mesh</th><th>Show</th><th>Hi-lite</th></tr></thead>
+        <tbody id="partsRows"></tbody>
+      </table>
+    </section>
+
+    <section>
+      <div class="sec-lbl">Arrows (show / highlight)</div>
+      <table class="ptable">
+        <thead><tr><th>Arrow mesh</th><th>Show</th><th>Hi-lite</th></tr></thead>
+        <tbody id="arrowRows"></tbody>
+      </table>
+      <div class="table-empty" id="arrowEmpty" hidden>No arrow_* meshes in this model. Name annotation bodies arrow_&hellip; in Fusion 360 and they will appear here.</div>
+      <button class="abtn ghost" id="aPreview">Preview these selections</button>
+    </section>
+
+    <section>
+      <div class="sec-lbl">Capture</div>
+      <button class="abtn" id="aCapture">Capture view &rarr; JSON</button>
+      <textarea id="capOut" spellcheck="false" placeholder="Captured step JSON appears here &mdash; paste into your sheet's camera/step columns."></textarea>
+      <button class="abtn ghost" id="aCopy">Copy JSON</button>
+      <div id="copyMsg"></div>
+    </section>
+  </aside>
+
+  <nav id="nav">
+    <button class="navbtn" id="prev">&lsaquo; Prev</button>
+    <div id="rail" role="tablist" aria-label="Steps"></div>
+    <button class="navbtn" id="next">Next &rsaquo;</button>
+  </nav>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 <script>
 /* =========================================================================
-   CONFIG — swap MODEL_URL per product; STEPS will later come from
+   CONFIG - swap MODEL_URL per product; STEPS will later come from
    Google Sheets via Apps Script. For now: dummy data.
    Conventions:
-   - Meshes named arrow_* are annotation meshes: hidden unless a step
-     names one in `arrowMesh`.
-   - camera can be ABSOLUTE ({position,target}) — what Capture produces —
+   - Meshes named arrow_* are annotation meshes: hidden unless listed in a
+     step's visibleArrows (and optionally highlightedArrows).
+   - camera can be ABSOLUTE ({position,target}) - what Capture produces -
      or AUTO ({auto:{azimuth,elevation,distance}}) which frames the model
-     by its bounding sphere (used here since we don't know model scale yet).
+     by its bounding sphere.
+   - backgroundColor is per-step, so a step can call attention to itself.
    ========================================================================= */
 const MODEL_URL = 'https://cdn.jsdelivr.net/gh/davidthefuturist/plz@main/Body1.glb';
+const DEFAULT_BG = '#0e1013';
 
 const STEPS = [
   {
     product: 'Demo Product', subassembly: 'Base frame', step: 1,
     directions: 'Orient the base as shown. Confirm the mounting face is up and the serial label faces you.',
-    parts: ['Base frame ×1'], tools: ['None'],
-    visibleParts: 'all', highlightedParts: [], arrowMesh: '',
+    parts: ['Base frame x1'], tools: ['None'],
+    visibleParts: 'all', highlightedParts: [],
+    visibleArrows: [], highlightedArrows: [],
+    backgroundColor: DEFAULT_BG,
     camera: { auto: { azimuth: 35, elevation: 22, distance: 2.2 }, controlsEnabled: true, fov: 50, transition: 'smooth' }
   },
   {
     product: 'Demo Product', subassembly: 'Base frame', step: 2,
     directions: 'Inspect the underside for shipping damage before proceeding. Do not remove protective film yet.',
-    parts: ['Base frame ×1'], tools: ['Flashlight'],
-    visibleParts: 'all', highlightedParts: [], arrowMesh: '',
+    parts: ['Base frame x1'], tools: ['Flashlight'],
+    visibleParts: 'all', highlightedParts: [],
+    visibleArrows: [], highlightedArrows: [],
+    backgroundColor: DEFAULT_BG,
     camera: { auto: { azimuth: 210, elevation: -18, distance: 2.0 }, controlsEnabled: false, fov: 50, transition: 'smooth' }
   },
   {
     product: 'Demo Product', subassembly: 'Fastening', step: 3,
-    directions: 'Locate the four M5 bosses on the top face. This view is locked to the required inspection angle — drag to look around, then Reset view.',
-    parts: ['M5×12 SHCS ×4', 'M5 washer ×4'], tools: ['4mm hex driver', 'Torque wrench (4 N·m)'],
-    visibleParts: 'all', highlightedParts: [], arrowMesh: '',
+    directions: 'CRITICAL STEP - note the background change. Locate the four M5 bosses on the top face. This view is locked to the required inspection angle - drag to look around, then Reset view.',
+    parts: ['M5x12 SHCS x4', 'M5 washer x4'], tools: ['4mm hex driver', 'Torque wrench (4 N-m)'],
+    visibleParts: 'all', highlightedParts: [],
+    visibleArrows: [], highlightedArrows: [],
+    backgroundColor: '#2a1608',
     camera: { auto: { azimuth: 90, elevation: 65, distance: 1.8 }, controlsEnabled: false, fov: 45, transition: 'instant' }
   },
   {
     product: 'Demo Product', subassembly: 'Final check', step: 4,
     directions: 'Rotate freely and verify no fasteners protrude. Sign off in the traveler when complete.',
     parts: [], tools: ['None'],
-    visibleParts: 'all', highlightedParts: [], arrowMesh: '',
+    visibleParts: 'all', highlightedParts: [],
+    visibleArrows: [], highlightedArrows: [],
+    backgroundColor: DEFAULT_BG,
     camera: { auto: { azimuth: 315, elevation: 15, distance: 2.6 }, controlsEnabled: true, fov: 55, transition: 'smooth' }
   }
 ];
 
 /* ========================= three.js core ========================= */
 let scene, camera, renderer, controls, model;
-let meshes = [];                 // [{name, mesh, originalMaterial}]
+let parts = [];                  // non-arrow meshes: [{name, mesh, originalMaterial}]
+let arrows = [];                 // arrow_* meshes
 let boundCenter = new THREE.Vector3(), boundRadius = 1;
-let cur = 0;                     // current step index
-let tween = null;                // active camera tween
-let deviated = false;            // user moved camera off the step view
+let cur = 0;
+let tween = null;
+let deviated = false;
 let authorMode = false;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+const app = document.getElementById('av-app');
 const $ = id => document.getElementById(id);
+const isArrowName = n => n.toLowerCase().startsWith('arrow');
 
 init();
 
 function init() {
   const vp = $('viewport');
   scene = new THREE.Scene();
-  scene.background = new THREE.Color(0x0e1013);
+  scene.background = new THREE.Color(DEFAULT_BG);
 
-  camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.01, 1000);
+  camera = new THREE.PerspectiveCamera(50, appW() / appH(), 0.01, 1000);
 
   renderer = new THREE.WebGLRenderer({ antialias: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-  renderer.setSize(innerWidth, innerHeight);
+  renderer.setSize(appW(), appH());
   renderer.outputEncoding = THREE.sRGBEncoding;
   vp.appendChild(renderer.domElement);
 
@@ -313,32 +348,43 @@ function init() {
   controls.enableDamping = true;
   controls.dampingFactor = 0.08;
 
-  // Any user interaction = deviation from the authored view
   controls.addEventListener('start', () => {
-    if (tween) tween = null;               // user grabs during tween → cancel
+    if (tween) tween = null;
     deviated = true;
     updateResetPill();
   });
 
-  // Locked steps: a drag on the canvas temporarily unlocks orbit
   renderer.domElement.addEventListener('pointerdown', () => {
     if (!controls.enabled && !authorMode) {
-      controls.enabled = true;             // temporary unlock
+      controls.enabled = true;
       deviated = true;
       updateResetPill();
     }
   });
 
-  window.addEventListener('resize', () => {
-    camera.aspect = innerWidth / innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(innerWidth, innerHeight);
-  });
+  // Size to the CONTAINER, not the window - works embedded or standalone.
+  // Deferring to the next frame prevents "ResizeObserver loop" errors:
+  // resizing the canvas inside the callback can re-trigger the observer.
+  let resizeQueued = false;
+  new ResizeObserver(() => {
+    if (resizeQueued) return;
+    resizeQueued = true;
+    requestAnimationFrame(() => { resizeQueued = false; onResize(); });
+  }).observe(app);
 
   loadModel();
   buildRail();
   wireUI();
   animate();
+}
+
+function appW() { return app.clientWidth || 1; }
+function appH() { return app.clientHeight || 1; }
+
+function onResize() {
+  camera.aspect = appW() / appH();
+  camera.updateProjectionMatrix();
+  renderer.setSize(appW(), appH());
 }
 
 function loadModel() {
@@ -348,18 +394,17 @@ function loadModel() {
       model = gltf.scene;
       scene.add(model);
 
-      // Enumerate named meshes; unnamed ones get a fallback name.
       let i = 0;
       model.traverse(o => {
         if (o.isMesh) {
-          const name = o.name || (o.parent && o.parent.name) || `mesh_${i}`;
+          const name = o.name || (o.parent && o.parent.name) || ('mesh_' + i);
           o.name = name;
-          meshes.push({ name, mesh: o, originalMaterial: o.material });
+          const entry = { name, mesh: o, originalMaterial: o.material };
+          (isArrowName(name) ? arrows : parts).push(entry);
           i++;
         }
       });
 
-      // Bounding sphere for auto-cameras and sane near/far.
       const box = new THREE.Box3().setFromObject(model);
       box.getCenter(boundCenter);
       boundRadius = box.getSize(new THREE.Vector3()).length() / 2 || 1;
@@ -367,7 +412,7 @@ function loadModel() {
       camera.far  = boundRadius * 100;
       camera.updateProjectionMatrix();
 
-      buildPartsTable();
+      buildMeshTables();
       applyStep(0, { instant: true });
 
       $('loading').classList.add('done');
@@ -380,11 +425,24 @@ function loadModel() {
       }
     },
     err => {
-      console.error(err);
+      console.error('Model load failed:', err);
       $('loadPct').style.display = 'none';
       const e = $('loadErr');
       e.style.display = 'block';
-      e.textContent = 'Could not load model. Check the MODEL_URL and your connection, then reload.';
+      e.innerHTML = 'Could not load the model from:<br><code style="font-size:.7em;word-break:break-all">' +
+        MODEL_URL + '</code><br><br>' +
+        'This is a network fetch failure. Open that URL directly in a new tab: ' +
+        'if it downloads, the file is fine and the failure is on this page (connection blip, ' +
+        'content blocker, or a restricted network). ' +
+        '<button id="retryLoad" style="margin-top:10px;font:inherit;cursor:pointer;padding:8px 14px;' +
+        'border:1px solid #ff8a00;border-radius:8px;background:#ff8a00;color:#16181c">Retry</button>';
+      document.getElementById('retryLoad').addEventListener('click', () => {
+        e.style.display = 'none';
+        $('loadPct').style.display = '';
+        $('loadPct').textContent = 'Retrying\u2026';
+        $('loadBar').style.width = '0%';
+        loadModel();
+      });
     }
   );
 }
@@ -399,14 +457,12 @@ function animate() {
 
 /* ========================= camera ========================= */
 function resolveCamera(camDef) {
-  // Returns {position:Vector3, target:Vector3}
   if (camDef.position && camDef.target) {
     return {
       position: new THREE.Vector3(camDef.position.x, camDef.position.y, camDef.position.z),
       target:   new THREE.Vector3(camDef.target.x,   camDef.target.y,   camDef.target.z)
     };
   }
-  // auto: spherical placement around the model's bounding sphere
   const a = camDef.auto || { azimuth: 30, elevation: 20, distance: 2.2 };
   const az = THREE.MathUtils.degToRad(a.azimuth);
   const el = THREE.MathUtils.degToRad(a.elevation);
@@ -419,29 +475,30 @@ function resolveCamera(camDef) {
   return { position: pos, target: boundCenter.clone() };
 }
 
-function goToCamera(camDef, { instant = false } = {}) {
-  const { position, target } = resolveCamera(camDef);
+function goToCamera(camDef, opts) {
+  opts = opts || {};
+  const rt = resolveCamera(camDef);
   const fov = camDef.fov || 50;
 
-  if (instant || reducedMotion || camDef.transition === 'instant') {
+  if (opts.instant || reducedMotion || camDef.transition === 'instant') {
     tween = null;
-    camera.position.copy(position);
-    controls.target.copy(target);
+    camera.position.copy(rt.position);
+    controls.target.copy(rt.target);
     camera.fov = fov;
     camera.updateProjectionMatrix();
     return;
   }
   tween = {
     t0: performance.now(), dur: 900,
-    p0: camera.position.clone(), p1: position,
-    g0: controls.target.clone(), g1: target,
+    p0: camera.position.clone(), p1: rt.position,
+    g0: controls.target.clone(), g1: rt.target,
     f0: camera.fov, f1: fov
   };
 }
 
 function stepTween() {
   const k = Math.min((performance.now() - tween.t0) / tween.dur, 1);
-  const e = k < .5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3) / 2;   // easeInOutCubic
+  const e = k < .5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3) / 2;
   camera.position.lerpVectors(tween.p0, tween.p1, e);
   controls.target.lerpVectors(tween.g0, tween.g1, e);
   camera.fov = tween.f0 + (tween.f1 - tween.f0) * e;
@@ -450,33 +507,30 @@ function stepTween() {
 }
 
 /* ========================= steps ========================= */
-function applyStep(i, { instant = false } = {}) {
+function applyStep(i, opts) {
+  opts = opts || {};
   cur = THREE.MathUtils.clamp(i, 0, STEPS.length - 1);
   const s = STEPS[cur];
 
-  // header
   $('hProduct').textContent = s.product;
   $('hSub').textContent = s.subassembly;
-  $('hStep').innerHTML = `STEP <b>${String(s.step).padStart(2,'0')}</b> of ${String(STEPS.length).padStart(2,'0')}`;
+  $('hStep').innerHTML = 'STEP <b>' + String(s.step).padStart(2,'0') + '</b> of ' + String(STEPS.length).padStart(2,'0');
 
-  // drawer
-  $('dDirections').textContent = s.directions || '—';
+  $('dDirections').textContent = s.directions || '\u2014';
   fillList($('dParts'), s.parts);
   fillList($('dTools'), s.tools);
 
-  // part visibility + highlights + arrows
-  applyPartState(s.visibleParts, s.highlightedParts, s.arrowMesh);
+  applyMeshState(s.visibleParts, s.highlightedParts, s.visibleArrows, s.highlightedArrows);
+  setBackground(s.backgroundColor || DEFAULT_BG);
 
-  // camera + controls
-  goToCamera(s.camera, { instant });
+  goToCamera(s.camera, { instant: opts.instant });
   controls.enabled = authorMode ? true : (s.camera.controlsEnabled !== false);
   deviated = false;
   updateResetPill();
 
-  // nav state
   $('prev').disabled = cur === 0;
   $('next').disabled = cur === STEPS.length - 1;
-  document.querySelectorAll('#rail .tick').forEach((t, idx) => {
+  app.querySelectorAll('#rail .tick').forEach((t, idx) => {
     t.classList.toggle('cur', idx === cur);
     t.classList.toggle('done', idx < cur);
   });
@@ -486,32 +540,46 @@ function applyStep(i, { instant = false } = {}) {
 
 function fillList(ul, items) {
   ul.innerHTML = '';
-  (items && items.length ? items : ['—']).forEach(x => {
+  (items && items.length ? items : ['\u2014']).forEach(x => {
     const li = document.createElement('li'); li.textContent = x; ul.appendChild(li);
   });
 }
 
-function applyPartState(visibleParts, highlightedParts, arrowMesh) {
-  const hi = new Set(highlightedParts || []);
-  const showAll = visibleParts === 'all' || !visibleParts;
-  const showSet = showAll ? null : new Set(visibleParts);
+function setBackground(hex) {
+  scene.background.set(hex);
+  $('aBg').value = hex;
+}
 
-  meshes.forEach(({ name, mesh, originalMaterial }) => {
-    const isArrow = name.toLowerCase().startsWith('arrow');
-    mesh.visible = isArrow ? (name === arrowMesh)
-                           : (showAll ? true : showSet.has(name));
-    if (hi.has(name)) {
-      if (!mesh.userData.hiMat) {
-        const m = originalMaterial.clone();
-        if ('emissive' in m) { m.emissive = new THREE.Color(0xff8a00); m.emissiveIntensity = 0.55; }
-        else m.color = new THREE.Color(0xff8a00);
-        mesh.userData.hiMat = m;
-      }
-      mesh.material = mesh.userData.hiMat;
-    } else {
-      mesh.material = originalMaterial;
-    }
+function applyMeshState(visibleParts, highlightedParts, visibleArrows, highlightedArrows) {
+  const hiP = new Set(highlightedParts || []);
+  const showAll = visibleParts === 'all' || !visibleParts;
+  const showSetP = showAll ? null : new Set(visibleParts);
+  parts.forEach(e => {
+    e.mesh.visible = showAll ? true : showSetP.has(e.name);
+    setHighlight(e, hiP.has(e.name));
   });
+
+  const showSetA = new Set(visibleArrows || []);
+  const hiA = new Set(highlightedArrows || []);
+  arrows.forEach(e => {
+    e.mesh.visible = showSetA.has(e.name);
+    setHighlight(e, hiA.has(e.name));
+  });
+}
+
+function setHighlight(entry, on) {
+  const mesh = entry.mesh;
+  if (on) {
+    if (!mesh.userData.hiMat) {
+      const m = entry.originalMaterial.clone();
+      if ('emissive' in m) { m.emissive = new THREE.Color(0xff8a00); m.emissiveIntensity = 0.55; }
+      else m.color = new THREE.Color(0xff8a00);
+      mesh.userData.hiMat = m;
+    }
+    mesh.material = mesh.userData.hiMat;
+  } else {
+    mesh.material = entry.originalMaterial;
+  }
 }
 
 /* ========================= reset view ========================= */
@@ -520,7 +588,7 @@ function updateResetPill() { $('resetView').classList.toggle('show', deviated); 
 $('resetView').addEventListener('click', () => {
   const s = STEPS[cur];
   goToCamera(s.camera);
-  if (!authorMode) controls.enabled = s.camera.controlsEnabled !== false;   // re-lock if step is locked
+  if (!authorMode) controls.enabled = s.camera.controlsEnabled !== false;
   deviated = false;
   updateResetPill();
 });
@@ -531,7 +599,7 @@ function buildRail() {
   STEPS.forEach((s, i) => {
     const b = document.createElement('button');
     b.className = 'tick';
-    b.title = `Step ${s.step}: ${s.subassembly}`;
+    b.title = 'Step ' + s.step + ': ' + s.subassembly;
     b.setAttribute('aria-label', b.title);
     b.addEventListener('click', () => applyStep(i));
     rail.appendChild(b);
@@ -542,37 +610,51 @@ function wireUI() {
   $('prev').addEventListener('click', () => applyStep(cur - 1));
   $('next').addEventListener('click', () => applyStep(cur + 1));
   window.addEventListener('keydown', e => {
-    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+    if (['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
     if (e.key === 'ArrowLeft') applyStep(cur - 1);
     if (e.key === 'ArrowRight') applyStep(cur + 1);
   });
 
-  // drawer collapse
   const body = $('drawerBody'), tog = $('drawerToggle');
   tog.addEventListener('click', () => {
     const open = body.hidden;
     body.hidden = !open;
     tog.setAttribute('aria-expanded', String(open));
-    $('drawerChevron').textContent = open ? '▾' : '▸';
+    $('drawerChevron').innerHTML = open ? '&#9662;' : '&#9656;';
   });
 
-  // Author mode is gated behind ?author=1 so techs never see it.
+  // fullscreen
+  $('fsToggle').addEventListener('click', () => {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else app.requestFullscreen && app.requestFullscreen();
+  });
+  document.addEventListener('fullscreenchange', () => {
+    $('fsToggle').innerHTML = document.fullscreenElement ? '&#x2715; EXIT' : '&#x26F6; FULL';
+  });
+
+  // Author mode gated behind ?author=1 so techs never see it.
   if (new URLSearchParams(location.search).get('author') === '1') {
     const at = $('authorToggle');
     at.style.display = 'inline-block';
     at.addEventListener('click', () => setAuthorMode(!authorMode));
   }
 
-  // author panel controls
+  // live-applying author inputs
+  $('aFov').addEventListener('input', () => {
+    const v = Number($('aFov').value);
+    if (v >= 20 && v <= 100) { camera.fov = v; camera.updateProjectionMatrix(); }
+  });
+  $('aBg').addEventListener('input', () => scene.background.set($('aBg').value));
+
   $('aPreview').addEventListener('click', previewAuthorSelections);
   $('aCapture').addEventListener('click', captureView);
   $('aCopy').addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText($('capOut').value);
       $('copyMsg').textContent = 'Copied.';
-    } catch {
+    } catch (e) {
       $('capOut').select();
-      $('copyMsg').textContent = 'Select-all done — press Ctrl/Cmd+C.';
+      $('copyMsg').textContent = 'Select-all done - press Ctrl/Cmd+C.';
     }
     setTimeout(() => $('copyMsg').textContent = '', 2000);
   });
@@ -584,79 +666,93 @@ function setAuthorMode(on) {
   $('authorToggle').dataset.on = on ? '1' : '0';
   $('author').hidden = !on;
   controls.enabled = on ? true : (STEPS[cur].camera.controlsEnabled !== false);
+  if (on) syncAuthorPanelToStep(STEPS[cur]);
 }
 
-function buildPartsTable() {
-  const tbody = $('partsRows');
-  const arrowSel = $('aArrow');
-  tbody.innerHTML = '';
-  meshes.forEach(({ name }) => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${name}</td>
-      <td><input type="checkbox" class="pShow" data-name="${name}" checked></td>
-      <td><input type="checkbox" class="pHi" data-name="${name}"></td>`;
-    tbody.appendChild(tr);
-    if (name.toLowerCase().startsWith('arrow')) {
-      const o = document.createElement('option');
-      o.value = name; o.textContent = name;
-      arrowSel.appendChild(o);
-    }
-  });
+function meshRow(name, showCls, hiCls, showChecked) {
+  const tr = document.createElement('tr');
+  tr.innerHTML = '<td>' + name + '</td>' +
+    '<td><input type="checkbox" class="' + showCls + '" data-name="' + name + '"' + (showChecked ? ' checked' : '') + '></td>' +
+    '<td><input type="checkbox" class="' + hiCls + '" data-name="' + name + '"></td>';
+  return tr;
+}
+
+function buildMeshTables() {
+  const pBody = $('partsRows');
+  pBody.innerHTML = '';
+  parts.forEach(e => pBody.appendChild(meshRow(e.name, 'pShow', 'pHi', true)));
+
+  const aBody = $('arrowRows');
+  aBody.innerHTML = '';
+  arrows.forEach(e => aBody.appendChild(meshRow(e.name, 'aShow', 'aHi', false)));
+  $('arrowEmpty').hidden = arrows.length > 0;
 }
 
 function syncAuthorPanelToStep(s) {
   $('aControls').checked = s.camera.controlsEnabled !== false;
   $('aTransition').value = s.camera.transition || 'smooth';
   $('aFov').value = s.camera.fov || 50;
-  $('aArrow').value = s.arrowMesh || '';
+  $('aBg').value = s.backgroundColor || DEFAULT_BG;
+
   const showAll = s.visibleParts === 'all' || !s.visibleParts;
   const showSet = showAll ? null : new Set(s.visibleParts);
   const hiSet = new Set(s.highlightedParts || []);
-  document.querySelectorAll('.pShow').forEach(cb => cb.checked = showAll ? true : showSet.has(cb.dataset.name));
-  document.querySelectorAll('.pHi').forEach(cb => cb.checked = hiSet.has(cb.dataset.name));
+  app.querySelectorAll('.pShow').forEach(cb => cb.checked = showAll ? true : showSet.has(cb.dataset.name));
+  app.querySelectorAll('.pHi').forEach(cb => cb.checked = hiSet.has(cb.dataset.name));
+
+  const showA = new Set(s.visibleArrows || []);
+  const hiA = new Set(s.highlightedArrows || []);
+  app.querySelectorAll('.aShow').forEach(cb => cb.checked = showA.has(cb.dataset.name));
+  app.querySelectorAll('.aHi').forEach(cb => cb.checked = hiA.has(cb.dataset.name));
 }
 
 function readAuthorSelections() {
-  const show = [], hi = [];
-  document.querySelectorAll('.pShow').forEach(cb => { if (cb.checked) show.push(cb.dataset.name); });
-  document.querySelectorAll('.pHi').forEach(cb => { if (cb.checked) hi.push(cb.dataset.name); });
-  const allShown = show.length === meshes.filter(m => !m.name.toLowerCase().startsWith('arrow')).length + 
-                   meshes.filter(m => m.name.toLowerCase().startsWith('arrow') && show.includes(m.name)).length;
+  const showP = [], hiP = [], showA = [], hiA = [];
+  app.querySelectorAll('.pShow').forEach(cb => { if (cb.checked) showP.push(cb.dataset.name); });
+  app.querySelectorAll('.pHi').forEach(cb => { if (cb.checked) hiP.push(cb.dataset.name); });
+  app.querySelectorAll('.aShow').forEach(cb => { if (cb.checked) showA.push(cb.dataset.name); });
+  app.querySelectorAll('.aHi').forEach(cb => { if (cb.checked) hiA.push(cb.dataset.name); });
   return {
-    visibleParts: show.length === meshes.length ? 'all' : show,
-    highlightedParts: hi,
-    arrowMesh: $('aArrow').value
+    visibleParts: showP.length === parts.length ? 'all' : showP,
+    highlightedParts: hiP,
+    visibleArrows: showA,
+    highlightedArrows: hiA
   };
 }
 
 function previewAuthorSelections() {
   const sel = readAuthorSelections();
-  applyPartState(sel.visibleParts, sel.highlightedParts, sel.arrowMesh);
+  applyMeshState(sel.visibleParts, sel.highlightedParts, sel.visibleArrows, sel.highlightedArrows);
+  const v = Number($('aFov').value);
+  if (v >= 20 && v <= 100) { camera.fov = v; camera.updateProjectionMatrix(); }
+  scene.background.set($('aBg').value);
 }
 
 function captureView() {
   const sel = readAuthorSelections();
   const out = {
     camera: {
-      position: { x: r(camera.position.x), y: r(camera.position.y), z: r(camera.position.z) },
-      target:   { x: r(controls.target.x), y: r(controls.target.y), z: r(controls.target.z) },
+      position: { x: r3(camera.position.x), y: r3(camera.position.y), z: r3(camera.position.z) },
+      target:   { x: r3(controls.target.x), y: r3(controls.target.y), z: r3(controls.target.z) },
       fov: Number($('aFov').value) || 50,
       controlsEnabled: $('aControls').checked,
       transition: $('aTransition').value
     },
+    backgroundColor: $('aBg').value,
     visibleParts: sel.visibleParts,
     highlightedParts: sel.highlightedParts,
-    arrowMesh: sel.arrowMesh
+    visibleArrows: sel.visibleArrows,
+    highlightedArrows: sel.highlightedArrows
   };
   $('capOut').value = JSON.stringify(out, null, 2);
 }
-const r = n => Math.round(n * 1000) / 1000;
+const r3 = n => Math.round(n * 1000) / 1000;
 
 function updateCamReadout() {
   $('camRead').textContent =
-    `pos  ${r(camera.position.x)}, ${r(camera.position.y)}, ${r(camera.position.z)}\n` +
-    `tgt  ${r(controls.target.x)}, ${r(controls.target.y)}, ${r(controls.target.z)}\n` +
-    `fov  ${r(camera.fov)}`;
+    'pos  ' + r3(camera.position.x) + ', ' + r3(camera.position.y) + ', ' + r3(camera.position.z) + '\n' +
+    'tgt  ' + r3(controls.target.x) + ', ' + r3(controls.target.y) + ', ' + r3(controls.target.z) + '\n' +
+    'fov  ' + r3(camera.fov);
 }
 </script>
 </body>
