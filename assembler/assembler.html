@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assembly Viewer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg0: #0e1013;         /* viewport clear color */
+    --panel: #16181c;
+    --panel-2: #1e2126;
+    --line: #2a2e35;
+    --line-strong: #3a3f47;
+    --ink: #e8e6e1;
+    --ink-soft: #9aa0a8;
+    --ink-faint: #6b7078;
+    --accent: #ff8a00;      /* safety orange */
+    --accent-soft: rgba(255,138,0,.14);
+    --font-body: 'Archivo', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; overflow: hidden; background: var(--bg0); color: var(--ink); font-family: var(--font-body); }
+  canvas { display: block; }
+  button { font-family: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+
+  /* ---------- viewport ---------- */
+  #viewport { position: fixed; inset: 0; }
+
+  /* ---------- loading ---------- */
+  #loading { position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; gap: 14px;
+    align-items: center; justify-content: center; background: var(--bg0); transition: opacity .4s; }
+  #loading.done { opacity: 0; pointer-events: none; }
+  #loading .bar { width: min(280px, 60vw); height: 3px; background: var(--panel-2); border-radius: 2px; overflow: hidden; }
+  #loading .bar i { display: block; height: 100%; width: 0%; background: var(--accent); transition: width .2s; }
+  #loading .pct { font-family: var(--font-mono); font-size: .75rem; color: var(--ink-soft); }
+  #loading .err { color: #ff6b5e; font-size: .85rem; max-width: 80vw; text-align: center; display: none; }
+
+  /* ---------- header ---------- */
+  #hdr { position: fixed; top: 0; left: 0; right: 0; z-index: 20;
+    display: flex; align-items: center; gap: 14px; padding: 12px 16px;
+    background: linear-gradient(to bottom, rgba(14,16,19,.92), rgba(14,16,19,0));
+    pointer-events: none; }
+  #hdr > * { pointer-events: auto; }
+  #hdr .product { font-weight: 700; font-size: 1rem; letter-spacing: .01em; }
+  #hdr .sub { font-size: .85rem; color: var(--ink-soft); border-left: 1px solid var(--line-strong); padding-left: 14px; }
+  #hdr .stepnum { margin-left: auto; font-family: var(--font-mono); font-size: .78rem; color: var(--ink-soft); }
+  #hdr .stepnum b { color: var(--accent); font-weight: 500; }
+  #authorToggle { display: none; font-size: .72rem; font-family: var(--font-mono); cursor: pointer;
+    padding: 5px 12px; border: 1px solid var(--line-strong); border-radius: 999px;
+    background: var(--panel); color: var(--ink-soft); }
+  #authorToggle[data-on="1"] { background: var(--accent); border-color: var(--accent); color: #16181c; }
+
+  /* ---------- bottom bar: prev / step rail / next ---------- */
+  #nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
+    display: flex; align-items: center; gap: 12px; padding: 14px 16px 18px;
+    background: linear-gradient(to top, rgba(14,16,19,.92), rgba(14,16,19,0)); }
+  .navbtn { flex: 0 0 auto; min-width: 96px; padding: 13px 20px; font-size: .9rem; font-weight: 600; cursor: pointer;
+    border: 1px solid var(--line-strong); border-radius: 10px; background: var(--panel); color: var(--ink);
+    transition: border-color .15s, background .15s; touch-action: manipulation; }
+  .navbtn:hover:not(:disabled) { border-color: var(--accent); }
+  .navbtn:disabled { opacity: .35; cursor: default; }
+  #next { background: var(--accent); border-color: var(--accent); color: #16181c; }
+  #next:hover:not(:disabled) { background: #ffa033; }
+  /* step rail — ticks like stations on the line */
+  #rail { flex: 1; display: flex; align-items: center; gap: 5px; min-width: 0; padding: 0 4px; }
+  #rail .tick { flex: 1; height: 4px; border-radius: 2px; background: var(--panel-2); border: 0; padding: 0;
+    cursor: pointer; transition: background .2s, height .2s; min-width: 4px; }
+  #rail .tick.done { background: var(--line-strong); }
+  #rail .tick.cur { background: var(--accent); height: 8px; }
+  #rail .tick:hover { background: var(--ink-faint); }
+  #rail .tick.cur:hover { background: var(--accent); }
+
+  /* ---------- reset view pill ---------- */
+  #resetView { position: fixed; z-index: 20; left: 50%; transform: translateX(-50%); bottom: 84px;
+    display: none; align-items: center; gap: 8px; cursor: pointer;
+    font-size: .8rem; font-weight: 500; padding: 9px 16px;
+    border: 1px solid var(--line-strong); border-radius: 999px;
+    background: var(--panel); color: var(--ink); box-shadow: 0 8px 24px rgba(0,0,0,.4); }
+  #resetView.show { display: inline-flex; }
+  #resetView::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+  /* ---------- info drawer (directions / parts / tools) ---------- */
+  #drawer { position: fixed; top: 64px; right: 16px; z-index: 20;
+    width: min(320px, 88vw); max-height: calc(100vh - 170px);
+    display: flex; flex-direction: column; }
+  #drawerToggle { align-self: flex-end; font-size: .78rem; font-weight: 500; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 7px; padding: 8px 14px;
+    border: 1px solid var(--line-strong); border-radius: 999px; background: var(--panel); color: var(--ink); }
+  #drawerBody { margin-top: 8px; overflow: auto; background: var(--panel);
+    border: 1px solid var(--line-strong); border-radius: 12px; padding: 6px 14px 12px;
+    box-shadow: 0 18px 48px rgba(0,0,0,.4); }
+  #drawerBody[hidden] { display: none; }
+  #drawer details { border-bottom: 1px solid var(--line); }
+  #drawer details:last-child { border-bottom: 0; }
+  #drawer summary { cursor: pointer; list-style: none; display: flex; align-items: center; justify-content: space-between;
+    padding: 11px 2px; font-size: .72rem; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-soft); }
+  #drawer summary::-webkit-details-marker { display: none; }
+  #drawer summary::after { content: "+"; font-family: var(--font-mono); color: var(--ink-faint); }
+  #drawer details[open] summary::after { content: "–"; }
+  #drawer .body { padding: 0 2px 12px; font-size: .9rem; line-height: 1.5; color: var(--ink); }
+  #drawer .body ul { margin: 0; padding-left: 18px; }
+  #drawer .body li { margin: 3px 0; }
+
+  /* ---------- author panel ---------- */
+  #author { position: fixed; top: 64px; left: 16px; z-index: 30;
+    width: min(340px, 90vw); max-height: calc(100vh - 170px); overflow: auto;
+    background: var(--panel); border: 1px solid var(--accent); border-radius: 12px;
+    padding: 14px; box-shadow: 0 18px 48px rgba(0,0,0,.5); }
+  #author[hidden] { display: none; }
+  #author h2 { margin: 0 0 2px; font-size: .95rem; font-weight: 700; }
+  #author .hint { font-size: .72rem; color: var(--ink-faint); margin: 0 0 12px; }
+  #author section { border-top: 1px solid var(--line); padding: 10px 0; }
+  #author .sec-lbl { font-size: .64rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
+  #author .cam-read { font-family: var(--font-mono); font-size: .68rem; color: var(--ink-soft); line-height: 1.6; white-space: pre; }
+  #author label.row { display: flex; align-items: center; gap: 8px; font-size: .82rem; padding: 4px 0; }
+  #author select, #author input[type=number] { font: inherit; font-size: .8rem; background: var(--panel-2); color: var(--ink);
+    border: 1px solid var(--line-strong); border-radius: 6px; padding: 5px 8px; }
+  #partsTable { width: 100%; border-collapse: collapse; font-size: .78rem; }
+  #partsTable th { font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint);
+    text-align: left; padding: 2px 4px 6px; }
+  #partsTable th:nth-child(2), #partsTable th:nth-child(3) { text-align: center; }
+  #partsTable td { padding: 4px; border-top: 1px solid var(--line); }
+  #partsTable td:first-child { font-family: var(--font-mono); font-size: .7rem; word-break: break-all; }
+  #partsTable td:nth-child(2), #partsTable td:nth-child(3) { text-align: center; }
+  .abtn { width: 100%; margin-top: 8px; font-size: .82rem; font-weight: 600; cursor: pointer; padding: 10px;
+    border: 1px solid var(--accent); border-radius: 8px; background: var(--accent); color: #16181c; }
+  .abtn.ghost { background: transparent; color: var(--accent); }
+  #capOut { width: 100%; margin-top: 8px; font-family: var(--font-mono); font-size: .66rem; line-height: 1.5;
+    background: var(--panel-2); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 8px;
+    padding: 8px; resize: vertical; min-height: 120px; }
+  #copyMsg { font-family: var(--font-mono); font-size: .68rem; color: var(--accent); min-height: 1em; text-align: center; margin-top: 4px; }
+
+  @media (max-width: 640px) {
+    #hdr .sub { display: none; }
+    .navbtn { min-width: 72px; padding: 12px 14px; }
+    #drawer { top: 56px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    #loading { transition: none; }
+  }
+</style>
+</head>
+<body>
+
+<div id="viewport"></div>
+
+<div id="loading">
+  <div class="bar"><i id="loadBar"></i></div>
+  <div class="pct" id="loadPct">Loading model…</div>
+  <div class="err" id="loadErr"></div>
+</div>
+
+<header id="hdr">
+  <span class="product" id="hProduct">—</span>
+  <span class="sub" id="hSub">—</span>
+  <span class="stepnum" id="hStep">STEP <b>–</b> of –</span>
+  <button id="authorToggle" title="Toggle author mode">AUTHOR</button>
+</header>
+
+<button id="resetView">Reset view</button>
+
+<aside id="drawer">
+  <button id="drawerToggle" aria-expanded="true">Step info <span id="drawerChevron">▾</span></button>
+  <div id="drawerBody">
+    <details open>
+      <summary>Directions</summary>
+      <div class="body" id="dDirections">—</div>
+    </details>
+    <details open>
+      <summary>Parts needed</summary>
+      <div class="body"><ul id="dParts"></ul></div>
+    </details>
+    <details>
+      <summary>Tools needed</summary>
+      <div class="body"><ul id="dTools"></ul></div>
+    </details>
+  </div>
+</aside>
+
+<aside id="author" hidden>
+  <h2>Author mode</h2>
+  <p class="hint">Orbit to the exact view a tech should see, choose parts &amp; options, then Capture.</p>
+
+  <section>
+    <div class="sec-lbl">Live camera</div>
+    <div class="cam-read" id="camRead">—</div>
+  </section>
+
+  <section>
+    <div class="sec-lbl">Step options</div>
+    <label class="row"><input type="checkbox" id="aControls" checked> Allow orbit for techs (controlsEnabled)</label>
+    <label class="row">Transition
+      <select id="aTransition">
+        <option value="smooth">smooth</option>
+        <option value="instant">instant</option>
+      </select>
+    </label>
+    <label class="row">FOV <input type="number" id="aFov" min="20" max="100" step="1" value="50" style="width:70px"></label>
+  </section>
+
+  <section>
+    <div class="sec-lbl">Parts (show / highlight)</div>
+    <table id="partsTable">
+      <thead><tr><th>Mesh</th><th>Show</th><th>Hi-lite</th></tr></thead>
+      <tbody id="partsRows"></tbody>
+    </table>
+    <label class="row" style="margin-top:8px">Arrow mesh
+      <select id="aArrow"><option value="">none</option></select>
+    </label>
+    <button class="abtn ghost" id="aPreview">Preview these selections</button>
+  </section>
+
+  <section>
+    <div class="sec-lbl">Capture</div>
+    <button class="abtn" id="aCapture">Capture view → JSON</button>
+    <textarea id="capOut" spellcheck="false" placeholder="Captured step JSON appears here — paste into your sheet's camera/step columns."></textarea>
+    <button class="abtn ghost" id="aCopy">Copy JSON</button>
+    <div id="copyMsg"></div>
+  </section>
+</aside>
+
+<nav id="nav">
+  <button class="navbtn" id="prev">‹ Prev</button>
+  <div id="rail" role="tablist" aria-label="Steps"></div>
+  <button class="navbtn" id="next">Next ›</button>
+</nav>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+/* =========================================================================
+   CONFIG — swap MODEL_URL per product; STEPS will later come from
+   Google Sheets via Apps Script. For now: dummy data.
+   Conventions:
+   - Meshes named arrow_* are annotation meshes: hidden unless a step
+     names one in `arrowMesh`.
+   - camera can be ABSOLUTE ({position,target}) — what Capture produces —
+     or AUTO ({auto:{azimuth,elevation,distance}}) which frames the model
+     by its bounding sphere (used here since we don't know model scale yet).
+   ========================================================================= */
+const MODEL_URL = 'https://cdn.jsdelivr.net/gh/davidthefuturist/plz@main/Body1.glb';
+
+const STEPS = [
+  {
+    product: 'Demo Product', subassembly: 'Base frame', step: 1,
+    directions: 'Orient the base as shown. Confirm the mounting face is up and the serial label faces you.',
+    parts: ['Base frame ×1'], tools: ['None'],
+    visibleParts: 'all', highlightedParts: [], arrowMesh: '',
+    camera: { auto: { azimuth: 35, elevation: 22, distance: 2.2 }, controlsEnabled: true, fov: 50, transition: 'smooth' }
+  },
+  {
+    product: 'Demo Product', subassembly: 'Base frame', step: 2,
+    directions: 'Inspect the underside for shipping damage before proceeding. Do not remove protective film yet.',
+    parts: ['Base frame ×1'], tools: ['Flashlight'],
+    visibleParts: 'all', highlightedParts: [], arrowMesh: '',
+    camera: { auto: { azimuth: 210, elevation: -18, distance: 2.0 }, controlsEnabled: false, fov: 50, transition: 'smooth' }
+  },
+  {
+    product: 'Demo Product', subassembly: 'Fastening', step: 3,
+    directions: 'Locate the four M5 bosses on the top face. This view is locked to the required inspection angle — drag to look around, then Reset view.',
+    parts: ['M5×12 SHCS ×4', 'M5 washer ×4'], tools: ['4mm hex driver', 'Torque wrench (4 N·m)'],
+    visibleParts: 'all', highlightedParts: [], arrowMesh: '',
+    camera: { auto: { azimuth: 90, elevation: 65, distance: 1.8 }, controlsEnabled: false, fov: 45, transition: 'instant' }
+  },
+  {
+    product: 'Demo Product', subassembly: 'Final check', step: 4,
+    directions: 'Rotate freely and verify no fasteners protrude. Sign off in the traveler when complete.',
+    parts: [], tools: ['None'],
+    visibleParts: 'all', highlightedParts: [], arrowMesh: '',
+    camera: { auto: { azimuth: 315, elevation: 15, distance: 2.6 }, controlsEnabled: true, fov: 55, transition: 'smooth' }
+  }
+];
+
+/* ========================= three.js core ========================= */
+let scene, camera, renderer, controls, model;
+let meshes = [];                 // [{name, mesh, originalMaterial}]
+let boundCenter = new THREE.Vector3(), boundRadius = 1;
+let cur = 0;                     // current step index
+let tween = null;                // active camera tween
+let deviated = false;            // user moved camera off the step view
+let authorMode = false;
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+const $ = id => document.getElementById(id);
+
+init();
+
+function init() {
+  const vp = $('viewport');
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0e1013);
+
+  camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.01, 1000);
+
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.setSize(innerWidth, innerHeight);
+  renderer.outputEncoding = THREE.sRGBEncoding;
+  vp.appendChild(renderer.domElement);
+
+  scene.add(new THREE.AmbientLight(0xffffff, 0.55));
+  const key = new THREE.DirectionalLight(0xffffff, 0.9);
+  key.position.set(5, 8, 6); scene.add(key);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.35);
+  fill.position.set(-6, 3, -5); scene.add(fill);
+
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+
+  // Any user interaction = deviation from the authored view
+  controls.addEventListener('start', () => {
+    if (tween) tween = null;               // user grabs during tween → cancel
+    deviated = true;
+    updateResetPill();
+  });
+
+  // Locked steps: a drag on the canvas temporarily unlocks orbit
+  renderer.domElement.addEventListener('pointerdown', () => {
+    if (!controls.enabled && !authorMode) {
+      controls.enabled = true;             // temporary unlock
+      deviated = true;
+      updateResetPill();
+    }
+  });
+
+  window.addEventListener('resize', () => {
+    camera.aspect = innerWidth / innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(innerWidth, innerHeight);
+  });
+
+  loadModel();
+  buildRail();
+  wireUI();
+  animate();
+}
+
+function loadModel() {
+  const loader = new THREE.GLTFLoader();
+  loader.load(MODEL_URL,
+    gltf => {
+      model = gltf.scene;
+      scene.add(model);
+
+      // Enumerate named meshes; unnamed ones get a fallback name.
+      let i = 0;
+      model.traverse(o => {
+        if (o.isMesh) {
+          const name = o.name || (o.parent && o.parent.name) || `mesh_${i}`;
+          o.name = name;
+          meshes.push({ name, mesh: o, originalMaterial: o.material });
+          i++;
+        }
+      });
+
+      // Bounding sphere for auto-cameras and sane near/far.
+      const box = new THREE.Box3().setFromObject(model);
+      box.getCenter(boundCenter);
+      boundRadius = box.getSize(new THREE.Vector3()).length() / 2 || 1;
+      camera.near = boundRadius / 100;
+      camera.far  = boundRadius * 100;
+      camera.updateProjectionMatrix();
+
+      buildPartsTable();
+      applyStep(0, { instant: true });
+
+      $('loading').classList.add('done');
+    },
+    p => {
+      if (p.total) {
+        const pct = Math.round(p.loaded / p.total * 100);
+        $('loadBar').style.width = pct + '%';
+        $('loadPct').textContent = pct + '%';
+      }
+    },
+    err => {
+      console.error(err);
+      $('loadPct').style.display = 'none';
+      const e = $('loadErr');
+      e.style.display = 'block';
+      e.textContent = 'Could not load model. Check the MODEL_URL and your connection, then reload.';
+    }
+  );
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  if (tween) stepTween();
+  controls.update();
+  if (authorMode) updateCamReadout();
+  renderer.render(scene, camera);
+}
+
+/* ========================= camera ========================= */
+function resolveCamera(camDef) {
+  // Returns {position:Vector3, target:Vector3}
+  if (camDef.position && camDef.target) {
+    return {
+      position: new THREE.Vector3(camDef.position.x, camDef.position.y, camDef.position.z),
+      target:   new THREE.Vector3(camDef.target.x,   camDef.target.y,   camDef.target.z)
+    };
+  }
+  // auto: spherical placement around the model's bounding sphere
+  const a = camDef.auto || { azimuth: 30, elevation: 20, distance: 2.2 };
+  const az = THREE.MathUtils.degToRad(a.azimuth);
+  const el = THREE.MathUtils.degToRad(a.elevation);
+  const d  = boundRadius * (a.distance || 2.2);
+  const pos = new THREE.Vector3(
+    boundCenter.x + d * Math.cos(el) * Math.sin(az),
+    boundCenter.y + d * Math.sin(el),
+    boundCenter.z + d * Math.cos(el) * Math.cos(az)
+  );
+  return { position: pos, target: boundCenter.clone() };
+}
+
+function goToCamera(camDef, { instant = false } = {}) {
+  const { position, target } = resolveCamera(camDef);
+  const fov = camDef.fov || 50;
+
+  if (instant || reducedMotion || camDef.transition === 'instant') {
+    tween = null;
+    camera.position.copy(position);
+    controls.target.copy(target);
+    camera.fov = fov;
+    camera.updateProjectionMatrix();
+    return;
+  }
+  tween = {
+    t0: performance.now(), dur: 900,
+    p0: camera.position.clone(), p1: position,
+    g0: controls.target.clone(), g1: target,
+    f0: camera.fov, f1: fov
+  };
+}
+
+function stepTween() {
+  const k = Math.min((performance.now() - tween.t0) / tween.dur, 1);
+  const e = k < .5 ? 4*k*k*k : 1 - Math.pow(-2*k + 2, 3) / 2;   // easeInOutCubic
+  camera.position.lerpVectors(tween.p0, tween.p1, e);
+  controls.target.lerpVectors(tween.g0, tween.g1, e);
+  camera.fov = tween.f0 + (tween.f1 - tween.f0) * e;
+  camera.updateProjectionMatrix();
+  if (k >= 1) tween = null;
+}
+
+/* ========================= steps ========================= */
+function applyStep(i, { instant = false } = {}) {
+  cur = THREE.MathUtils.clamp(i, 0, STEPS.length - 1);
+  const s = STEPS[cur];
+
+  // header
+  $('hProduct').textContent = s.product;
+  $('hSub').textContent = s.subassembly;
+  $('hStep').innerHTML = `STEP <b>${String(s.step).padStart(2,'0')}</b> of ${String(STEPS.length).padStart(2,'0')}`;
+
+  // drawer
+  $('dDirections').textContent = s.directions || '—';
+  fillList($('dParts'), s.parts);
+  fillList($('dTools'), s.tools);
+
+  // part visibility + highlights + arrows
+  applyPartState(s.visibleParts, s.highlightedParts, s.arrowMesh);
+
+  // camera + controls
+  goToCamera(s.camera, { instant });
+  controls.enabled = authorMode ? true : (s.camera.controlsEnabled !== false);
+  deviated = false;
+  updateResetPill();
+
+  // nav state
+  $('prev').disabled = cur === 0;
+  $('next').disabled = cur === STEPS.length - 1;
+  document.querySelectorAll('#rail .tick').forEach((t, idx) => {
+    t.classList.toggle('cur', idx === cur);
+    t.classList.toggle('done', idx < cur);
+  });
+
+  if (authorMode) syncAuthorPanelToStep(s);
+}
+
+function fillList(ul, items) {
+  ul.innerHTML = '';
+  (items && items.length ? items : ['—']).forEach(x => {
+    const li = document.createElement('li'); li.textContent = x; ul.appendChild(li);
+  });
+}
+
+function applyPartState(visibleParts, highlightedParts, arrowMesh) {
+  const hi = new Set(highlightedParts || []);
+  const showAll = visibleParts === 'all' || !visibleParts;
+  const showSet = showAll ? null : new Set(visibleParts);
+
+  meshes.forEach(({ name, mesh, originalMaterial }) => {
+    const isArrow = name.toLowerCase().startsWith('arrow');
+    mesh.visible = isArrow ? (name === arrowMesh)
+                           : (showAll ? true : showSet.has(name));
+    if (hi.has(name)) {
+      if (!mesh.userData.hiMat) {
+        const m = originalMaterial.clone();
+        if ('emissive' in m) { m.emissive = new THREE.Color(0xff8a00); m.emissiveIntensity = 0.55; }
+        else m.color = new THREE.Color(0xff8a00);
+        mesh.userData.hiMat = m;
+      }
+      mesh.material = mesh.userData.hiMat;
+    } else {
+      mesh.material = originalMaterial;
+    }
+  });
+}
+
+/* ========================= reset view ========================= */
+function updateResetPill() { $('resetView').classList.toggle('show', deviated); }
+
+$('resetView').addEventListener('click', () => {
+  const s = STEPS[cur];
+  goToCamera(s.camera);
+  if (!authorMode) controls.enabled = s.camera.controlsEnabled !== false;   // re-lock if step is locked
+  deviated = false;
+  updateResetPill();
+});
+
+/* ========================= nav + rail ========================= */
+function buildRail() {
+  const rail = $('rail');
+  STEPS.forEach((s, i) => {
+    const b = document.createElement('button');
+    b.className = 'tick';
+    b.title = `Step ${s.step}: ${s.subassembly}`;
+    b.setAttribute('aria-label', b.title);
+    b.addEventListener('click', () => applyStep(i));
+    rail.appendChild(b);
+  });
+}
+
+function wireUI() {
+  $('prev').addEventListener('click', () => applyStep(cur - 1));
+  $('next').addEventListener('click', () => applyStep(cur + 1));
+  window.addEventListener('keydown', e => {
+    if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') return;
+    if (e.key === 'ArrowLeft') applyStep(cur - 1);
+    if (e.key === 'ArrowRight') applyStep(cur + 1);
+  });
+
+  // drawer collapse
+  const body = $('drawerBody'), tog = $('drawerToggle');
+  tog.addEventListener('click', () => {
+    const open = body.hidden;
+    body.hidden = !open;
+    tog.setAttribute('aria-expanded', String(open));
+    $('drawerChevron').textContent = open ? '▾' : '▸';
+  });
+
+  // Author mode is gated behind ?author=1 so techs never see it.
+  if (new URLSearchParams(location.search).get('author') === '1') {
+    const at = $('authorToggle');
+    at.style.display = 'inline-block';
+    at.addEventListener('click', () => setAuthorMode(!authorMode));
+  }
+
+  // author panel controls
+  $('aPreview').addEventListener('click', previewAuthorSelections);
+  $('aCapture').addEventListener('click', captureView);
+  $('aCopy').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText($('capOut').value);
+      $('copyMsg').textContent = 'Copied.';
+    } catch {
+      $('capOut').select();
+      $('copyMsg').textContent = 'Select-all done — press Ctrl/Cmd+C.';
+    }
+    setTimeout(() => $('copyMsg').textContent = '', 2000);
+  });
+}
+
+/* ========================= author mode ========================= */
+function setAuthorMode(on) {
+  authorMode = on;
+  $('authorToggle').dataset.on = on ? '1' : '0';
+  $('author').hidden = !on;
+  controls.enabled = on ? true : (STEPS[cur].camera.controlsEnabled !== false);
+}
+
+function buildPartsTable() {
+  const tbody = $('partsRows');
+  const arrowSel = $('aArrow');
+  tbody.innerHTML = '';
+  meshes.forEach(({ name }) => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${name}</td>
+      <td><input type="checkbox" class="pShow" data-name="${name}" checked></td>
+      <td><input type="checkbox" class="pHi" data-name="${name}"></td>`;
+    tbody.appendChild(tr);
+    if (name.toLowerCase().startsWith('arrow')) {
+      const o = document.createElement('option');
+      o.value = name; o.textContent = name;
+      arrowSel.appendChild(o);
+    }
+  });
+}
+
+function syncAuthorPanelToStep(s) {
+  $('aControls').checked = s.camera.controlsEnabled !== false;
+  $('aTransition').value = s.camera.transition || 'smooth';
+  $('aFov').value = s.camera.fov || 50;
+  $('aArrow').value = s.arrowMesh || '';
+  const showAll = s.visibleParts === 'all' || !s.visibleParts;
+  const showSet = showAll ? null : new Set(s.visibleParts);
+  const hiSet = new Set(s.highlightedParts || []);
+  document.querySelectorAll('.pShow').forEach(cb => cb.checked = showAll ? true : showSet.has(cb.dataset.name));
+  document.querySelectorAll('.pHi').forEach(cb => cb.checked = hiSet.has(cb.dataset.name));
+}
+
+function readAuthorSelections() {
+  const show = [], hi = [];
+  document.querySelectorAll('.pShow').forEach(cb => { if (cb.checked) show.push(cb.dataset.name); });
+  document.querySelectorAll('.pHi').forEach(cb => { if (cb.checked) hi.push(cb.dataset.name); });
+  const allShown = show.length === meshes.filter(m => !m.name.toLowerCase().startsWith('arrow')).length + 
+                   meshes.filter(m => m.name.toLowerCase().startsWith('arrow') && show.includes(m.name)).length;
+  return {
+    visibleParts: show.length === meshes.length ? 'all' : show,
+    highlightedParts: hi,
+    arrowMesh: $('aArrow').value
+  };
+}
+
+function previewAuthorSelections() {
+  const sel = readAuthorSelections();
+  applyPartState(sel.visibleParts, sel.highlightedParts, sel.arrowMesh);
+}
+
+function captureView() {
+  const sel = readAuthorSelections();
+  const out = {
+    camera: {
+      position: { x: r(camera.position.x), y: r(camera.position.y), z: r(camera.position.z) },
+      target:   { x: r(controls.target.x), y: r(controls.target.y), z: r(controls.target.z) },
+      fov: Number($('aFov').value) || 50,
+      controlsEnabled: $('aControls').checked,
+      transition: $('aTransition').value
+    },
+    visibleParts: sel.visibleParts,
+    highlightedParts: sel.highlightedParts,
+    arrowMesh: sel.arrowMesh
+  };
+  $('capOut').value = JSON.stringify(out, null, 2);
+}
+const r = n => Math.round(n * 1000) / 1000;
+
+function updateCamReadout() {
+  $('camRead').textContent =
+    `pos  ${r(camera.position.x)}, ${r(camera.position.y)}, ${r(camera.position.z)}\n` +
+    `tgt  ${r(controls.target.x)}, ${r(controls.target.y)}, ${r(controls.target.z)}\n` +
+    `fov  ${r(camera.fov)}`;
+}
+</script>
+</body>
+</html>
