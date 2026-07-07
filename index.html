@@ -13,10 +13,21 @@
 
 <div id="canvas-container" style="width: 100vw; height: 100vh;"></div>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@r128/examples/js/loaders/GLTFLoader.js"></script>
+<script async src="https://cdn.jsdelivr.net/npm/es-module-shims@1/dist/es-module-shims.js"></script>
 
-<script>
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://cdn.jsdelivr.net/npm/three@r128/build/three.module.js",
+    "three/addons/": "https://cdn.jsdelivr.net/npm/three@r128/examples/jsm/"
+  }
+}
+</script>
+
+<script type="module">
+  import * as THREE from 'three';
+  import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
   const container = document.getElementById('canvas-container');
   
   const scene = new THREE.Scene();
@@ -41,7 +52,7 @@
   const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
   scene.add(ambientLight);
   
-  const loader = new THREE.GLTFLoader();
+  const loader = new GLTFLoader();
   let model;
   
   loader.load(
