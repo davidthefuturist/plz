@@ -30,13 +30,13 @@
     min-height: 420px; overflow: hidden; background: var(--bg0); color: var(--ink);
     font-family: var(--font-body); }
   .av-app:fullscreen { --av-height: 100vh; }
-  .av-app canvas { 
-    display: block; 
-    position: absolute; 
-    top: 0; 
-    left: 0; 
-    width: 100% !important; 
-    height: 100% !important; 
+  .av-app canvas {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
 }
   .av-app button { font-family: inherit; }
   .av-app :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
@@ -124,14 +124,17 @@
     background: var(--panel); border: 1px solid var(--accent); border-radius: 12px;
     padding: 14px; box-shadow: 0 18px 48px rgba(0,0,0,.5); }
   .av-app #author[hidden] { display: none; }
-  .av-app #author h2 { margin: 0 0 2px; font-size: .95rem; font-weight: 700; }
+  .av-app #author h2 { margin: 0 0 2px; font-size: .95rem; font-weight: 700; color: var(--accent);}
   .av-app #author .hint { font-size: .72rem; color: var(--ink-faint); margin: 0 0 12px; }
   .av-app #author section { border-top: 1px solid var(--line); padding: 10px 0; }
   .av-app #author .sec-lbl { font-size: .64rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
   .av-app #author .cam-read { font-family: var(--font-mono); font-size: .68rem; color: var(--ink-soft); line-height: 1.6; white-space: pre; }
   .av-app #author label.row { display: flex; align-items: center; gap: 8px; font-size: .82rem; padding: 4px 0; }
+  .av-app #author label.col { display: flex; flex-direction: column; gap: 4px; font-size: .7rem; color: var(--ink-soft); padding: 5px 0; }
   .av-app #author select, .av-app #author input[type=number] { font: inherit; font-size: .8rem; background: var(--panel-2); color: var(--ink);
     border: 1px solid var(--line-strong); border-radius: 6px; padding: 5px 8px; }
+  .av-app #author input[type=text], .av-app #author textarea { font: inherit; font-size: .78rem; background: var(--panel-2); color: var(--ink);
+    border: 1px solid var(--line-strong); border-radius: 6px; padding: 6px 8px; resize: vertical; }
   .av-app #author input[type=color] { width: 44px; height: 28px; padding: 2px; border: 1px solid var(--line-strong);
     border-radius: 6px; background: var(--panel-2); cursor: pointer; }
   .av-app .ptable { width: 100%; border-collapse: collapse; font-size: .78rem; }
@@ -145,6 +148,12 @@
   .av-app .abtn { width: 100%; margin-top: 8px; font-size: .82rem; font-weight: 600; cursor: pointer; padding: 10px;
     border: 1px solid var(--accent); border-radius: 8px; background: var(--accent); color: #16181c; }
   .av-app .abtn.ghost { background: transparent; color: var(--accent); }
+  .av-app .abtn.danger { border-color: #a63b2c; background: transparent; color: #ff6b5e; }
+  .av-app .abtn:disabled { opacity: .35; cursor: default; }
+  .av-app .merge-list { display: flex; flex-direction: column; gap: 3px; max-height: 130px; overflow: auto; }
+  .av-app .merge-list label { display: flex; gap: 7px; align-items: center; font-family: var(--font-mono); font-size: .66rem; color: var(--ink-soft); }
+  .av-app .opmsg { font-family: var(--font-mono); font-size: .68rem; min-height: 1em; text-align: center; margin-top: 6px; color: var(--accent); }
+  .av-app .opmsg.err { color: #ff6b5e; }
   .av-app #capOut { width: 100%; margin-top: 8px; font-family: var(--font-mono); font-size: .66rem; line-height: 1.5;
     background: var(--panel-2); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 8px;
     padding: 8px; resize: vertical; min-height: 120px; box-sizing: border-box; }
@@ -158,12 +167,24 @@
 </head>
 <body>
 
-<div class="av-app">
+<!-- ============================================================
+     CONFIG lives on this div. Fill in all three data attributes to
+     connect a Google Sheet (leave them empty for built-in demo data):
+       data-script-url : your Apps Script /exec URL
+       data-token      : must match TOKEN in Code.gs
+       data-product    : a Product name from the Products tab.        DEFINE PRODUCT
+     Multiple .av-app blocks per page are supported - each pairs with
+     the script block that follows it.
+     ============================================================ -->
+<div class="av-app"
+     data-script-url="https://script.google.com/macros/s/AKfycby9CxNq95sjOsVgT5jgIwM8YzqyywvxNyt19pxQtFyBmvaJ8OvImVVGnZvZ7SeUauZf/exec"
+     data-token="Christiansen"
+     data-product="Demo Product"> 
   <div id="viewport"></div>
 
   <div id="loading">
     <div class="bar"><i id="loadBar"></i></div>
-    <div class="pct" id="loadPct">Loading model&hellip;</div>
+    <div class="pct" id="loadPct">Loading&hellip;</div>
     <div class="err" id="loadErr"></div>
   </div>
 
@@ -197,11 +218,27 @@
 
   <aside id="author" hidden>
     <h2>Author mode</h2>
-    <p class="hint">Orbit to the exact view a tech should see, choose parts &amp; options, then Capture.</p>
+    <p class="hint">Orbit to the exact view a tech should see, set content &amp; options, then save.</p>
 
     <section>
       <div class="sec-lbl">Live camera</div>
       <div class="cam-read" id="camRead">&mdash;</div>
+    </section>
+
+    <section>
+      <div class="sec-lbl">Step content</div>
+      <label class="col">Subassembly
+        <input type="text" id="aSub">
+      </label>
+      <label class="col">Directions
+        <textarea id="aDir" rows="3"></textarea>
+      </label>
+      <label class="col">Parts needed (one per line)
+        <textarea id="aParts" rows="3"></textarea>
+      </label>
+      <label class="col">Tools needed (one per line)
+        <textarea id="aTools" rows="2"></textarea>
+      </label>
     </section>
 
     <section>
@@ -236,9 +273,22 @@
     </section>
 
     <section>
-      <div class="sec-lbl">Capture</div>
-      <button class="abtn" id="aCapture">Capture view &rarr; JSON</button>
-      <textarea id="capOut" spellcheck="false" placeholder="Captured step JSON appears here &mdash; paste into your sheet's camera/step columns."></textarea>
+      <div class="sec-lbl">Save / structure</div>
+      <div class="hint" id="opNote" hidden>Demo mode - no data source connected. Fill in data-script-url, data-token and data-product on the .av-app div to enable saving.</div>
+      <button class="abtn" id="btnSave">Save changes to this step</button>
+      <button class="abtn ghost" id="btnAdd">Add new step after this one</button>
+      <button class="abtn ghost" id="btnSplit">Split this step (1 &rarr; 2)</button>
+      <button class="abtn danger" id="btnDelete">Delete this step</button>
+      <div class="sec-lbl" style="margin-top:12px">Merge steps</div>
+      <div class="merge-list" id="mergeRows"></div>
+      <button class="abtn ghost" id="btnMerge">Merge selected into new step</button>
+      <div class="opmsg" id="opMsg"></div>
+    </section>
+
+    <section>
+      <div class="sec-lbl">Capture (debug)</div>
+      <button class="abtn ghost" id="aCapture">Capture view &rarr; JSON</button>
+      <textarea id="capOut" spellcheck="false" placeholder="Step JSON for inspection or manual pasting into the sheet."></textarea>
       <button class="abtn ghost" id="aCopy">Copy JSON</button>
       <div id="copyMsg"></div>
     </section>
@@ -258,22 +308,22 @@
 // Wrap EVERYTHING in an IIFE to isolate the variables
 (() => {
 /* =========================================================================
-   CONFIG - swap MODEL_URL per product; STEPS will later come from
-   Google Sheets via Apps Script. For now: dummy data.
+   Data comes from Google Sheets via Apps Script when the .av-app div has
+   data-script-url / data-token / data-product set; otherwise DEMO data.
    Conventions:
    - Meshes named arrow_* are annotation meshes: hidden unless listed in a
      step's visibleArrows (and optionally highlightedArrows).
-   - camera can be ABSOLUTE ({position,target}) - what Capture produces -
-     or AUTO ({auto:{azimuth,elevation,distance}}) which frames the model
-     by its bounding sphere.
-   - backgroundColor is per-step, so a step can call attention to itself.
+   - camera is ABSOLUTE ({position,target}) or AUTO ({auto:{azimuth,
+     elevation,distance}}) framed on the model's bounding sphere.
+   - Step identity is stepId (permanent); display numbers are computed
+     from array order, which the server sorts by the Order column.
    ========================================================================= */
-const MODEL_URL = 'https://cdn.jsdelivr.net/gh/davidthefuturist/plz@main/Body1.glb';
+const DEMO_MODEL_URL = 'https://cdn.jsdelivr.net/gh/davidthefuturist/plz@main/Body1.glb';
 const DEFAULT_BG = '#0e1013';
 
-const STEPS = [
+const DEMO_STEPS = [
   {
-    product: 'Demo Product', subassembly: 'Base frame', step: 1,
+    stepId: 'DEMO-000001', subassembly: 'Base frame',
     directions: 'Orient the base as shown. Confirm the mounting face is up and the serial label faces you.',
     parts: ['Base frame x1'], tools: ['None'],
     visibleParts: 'all', highlightedParts: [],
@@ -282,7 +332,7 @@ const STEPS = [
     camera: { auto: { azimuth: 35, elevation: 22, distance: 2.2 }, controlsEnabled: true, fov: 50, transition: 'smooth' }
   },
   {
-    product: 'Demo Product', subassembly: 'Base frame', step: 2,
+    stepId: 'DEMO-000002', subassembly: 'Base frame',
     directions: 'Inspect the underside for shipping damage before proceeding. Do not remove protective film yet.',
     parts: ['Base frame x1'], tools: ['Flashlight'],
     visibleParts: 'all', highlightedParts: [],
@@ -291,7 +341,7 @@ const STEPS = [
     camera: { auto: { azimuth: 210, elevation: -18, distance: 2.0 }, controlsEnabled: false, fov: 50, transition: 'smooth' }
   },
   {
-    product: 'Demo Product', subassembly: 'Fastening', step: 3,
+    stepId: 'DEMO-000003', subassembly: 'Fastening',
     directions: 'CRITICAL STEP - note the background change. Locate the four M5 bosses on the top face. This view is locked to the required inspection angle - drag to look around, then Reset view.',
     parts: ['M5x12 SHCS x4', 'M5 washer x4'], tools: ['4mm hex driver', 'Torque wrench (4 N-m)'],
     visibleParts: 'all', highlightedParts: [],
@@ -300,7 +350,7 @@ const STEPS = [
     camera: { auto: { azimuth: 90, elevation: 65, distance: 1.8 }, controlsEnabled: false, fov: 45, transition: 'instant' }
   },
   {
-    product: 'Demo Product', subassembly: 'Final check', step: 4,
+    stepId: 'DEMO-000004', subassembly: 'Final check',
     directions: 'Rotate freely and verify no fasteners protrude. Sign off in the traveler when complete.',
     parts: [], tools: ['None'],
     visibleParts: 'all', highlightedParts: [],
@@ -310,23 +360,32 @@ const STEPS = [
   }
 ];
 
-/* ========================= three.js core ========================= */
+/* ========================= state ========================= */
 let scene, camera, renderer, controls, model;
 let parts = [];                  // non-arrow meshes: [{name, mesh, originalMaterial}]
 let arrows = [];                 // arrow_* meshes
 let boundCenter = new THREE.Vector3(), boundRadius = 1;
+let steps = [];
+let productName = '';
 let cur = 0;
 let tween = null;
 let deviated = false;
 let authorMode = false;
+let busy = false;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-
 
 // Find the first .av-app container on the page that hasn't been claimed yet
 const app = Array.from(document.querySelectorAll('.av-app')).find(el => !el.dataset.claimed);
 if (!app) return; // Failsafe
 app.dataset.claimed = "true"; // Mark this container as taken by this script instance
+
+// Per-instance data source config, read from the container's attributes.
+const cfg = {
+  scriptUrl: (app.dataset.scriptUrl || '').trim(),
+  token: (app.dataset.token || '').trim(),
+  product: (app.dataset.product || '').trim()
+};
+const connected = !!(cfg.scriptUrl && cfg.product);
 
 // Scope our element selector strictly to THIS specific container
 const $ = id => app.querySelector('#' + id);
@@ -381,10 +440,60 @@ function init() {
     requestAnimationFrame(() => { resizeQueued = false; onResize(); });
   }).observe(app);
 
-  loadModel();
-  buildRail();
   wireUI();
   animate();
+  boot();
+}
+
+/* ========================= boot: data then model ========================= */
+async function boot() {
+  let modelUrl = DEMO_MODEL_URL;
+
+  if (connected) {
+    $('loadPct').textContent = 'Loading steps\u2026';
+    try {
+      const b = await apiGet({ action: 'bundle', product: cfg.product });
+      if (!b.ok) throw new Error(b.error || 'unknown API error');
+      if (!b.steps.length) throw new Error('product "' + cfg.product + '" has no active steps');
+      steps = b.steps.map(normalizeStep);
+      productName = b.product.name;
+      if (b.product.modelUrl) modelUrl = b.product.modelUrl;
+    } catch (err) {
+      bootError('Could not load steps from the data source.<br><br>' +
+        '<code style="font-size:.75em">' + String(err.message || err) + '</code>');
+      return;
+    }
+  } else {
+    steps = DEMO_STEPS.map(normalizeStep);
+    productName = 'Demo Product';
+  }
+
+  loadModel(modelUrl);
+}
+
+// Server keeps transition in its own column; the camera logic expects it
+// inside the camera object, so fold it in here.
+function normalizeStep(s) {
+  s.camera = s.camera || {};
+  if (s.transition && !s.camera.transition) s.camera.transition = s.transition;
+  return s;
+}
+
+function bootError(html) {
+  $('loadPct').style.display = 'none';
+  $('loadBar').parentElement.style.display = 'none';
+  const e = $('loadErr');
+  e.style.display = 'block';
+  e.innerHTML = html +
+    '<br><button id="retryBoot" style="margin-top:10px;font:inherit;cursor:pointer;padding:8px 14px;' +
+    'border:1px solid #ff8a00;border-radius:8px;background:#ff8a00;color:#16181c">Retry</button>';
+  $('retryBoot').addEventListener('click', () => {
+    e.style.display = 'none';
+    $('loadPct').style.display = '';
+    $('loadBar').parentElement.style.display = '';
+    $('loadBar').style.width = '0%';
+    boot();
+  });
 }
 
 function appW() { return app.clientWidth || 1; }
@@ -396,9 +505,10 @@ function onResize() {
   renderer.setSize(appW(), appH());
 }
 
-function loadModel() {
+function loadModel(url) {
   const loader = new THREE.GLTFLoader();
-  loader.load(MODEL_URL,
+  $('loadPct').textContent = 'Loading model\u2026';
+  loader.load(url,
     gltf => {
       model = gltf.scene;
       scene.add(model);
@@ -422,6 +532,8 @@ function loadModel() {
       camera.updateProjectionMatrix();
 
       buildMeshTables();
+      rebuildRail();
+      rebuildMergeList();
       applyStep(0, { instant: true });
 
       $('loading').classList.add('done');
@@ -435,23 +547,10 @@ function loadModel() {
     },
     err => {
       console.error('Model load failed:', err);
-      $('loadPct').style.display = 'none';
-      const e = $('loadErr');
-      e.style.display = 'block';
-      e.innerHTML = 'Could not load the model from:<br><code style="font-size:.7em;word-break:break-all">' +
-        MODEL_URL + '</code><br><br>' +
-        'This is a network fetch failure. Open that URL directly in a new tab: ' +
-        'if it downloads, the file is fine and the failure is on this page (connection blip, ' +
-        'content blocker, or a restricted network). ' +
-        '<button id="retryLoad" style="margin-top:10px;font:inherit;cursor:pointer;padding:8px 14px;' +
-        'border:1px solid #ff8a00;border-radius:8px;background:#ff8a00;color:#16181c">Retry</button>';
-      document.getElementById('retryLoad').addEventListener('click', () => {
-        e.style.display = 'none';
-        $('loadPct').style.display = '';
-        $('loadPct').textContent = 'Retrying\u2026';
-        $('loadBar').style.width = '0%';
-        loadModel();
-      });
+      bootError('Could not load the 3D model from:<br>' +
+        '<code style="font-size:.7em;word-break:break-all">' + url + '</code><br><br>' +
+        'Open that URL directly in a new tab: if it downloads, the file is fine and the ' +
+        'failure is on this page (connection blip, content blocker, or restricted network).');
     }
   );
 }
@@ -462,6 +561,31 @@ function animate() {
   controls.update();
   if (authorMode) updateCamReadout();
   renderer.render(scene, camera);
+}
+
+/* ========================= API ========================= */
+function apiGet(params) {
+  const q = new URLSearchParams(Object.assign({}, params, { token: cfg.token }));
+  return fetch(cfg.scriptUrl + '?' + q.toString()).then(r => r.json());
+}
+
+// A plain-string body keeps this a "simple request" (no CORS preflight),
+// which is what Apps Script web apps require from browsers.
+function apiPost(payload) {
+  const body = JSON.stringify(Object.assign({}, payload, {
+    token: cfg.token, product: cfg.product, author: ensureAuthor()
+  }));
+  return fetch(cfg.scriptUrl, { method: 'POST', body }).then(r => r.json());
+}
+
+function ensureAuthor() {
+  let name = '';
+  try { name = localStorage.getItem('avAuthorName') || ''; } catch (e) {}
+  if (!name) {
+    name = (prompt('Your name (recorded in the ledger with each change):') || 'unknown').trim() || 'unknown';
+    try { localStorage.setItem('avAuthorName', name); } catch (e) {}
+  }
+  return name;
 }
 
 /* ========================= camera ========================= */
@@ -518,12 +642,13 @@ function stepTween() {
 /* ========================= steps ========================= */
 function applyStep(i, opts) {
   opts = opts || {};
-  cur = THREE.MathUtils.clamp(i, 0, STEPS.length - 1);
-  const s = STEPS[cur];
+  if (!steps.length) return;
+  cur = THREE.MathUtils.clamp(i, 0, steps.length - 1);
+  const s = steps[cur];
 
-  $('hProduct').textContent = s.product;
+  $('hProduct').textContent = productName;
   $('hSub').textContent = s.subassembly;
-  $('hStep').innerHTML = 'STEP <b>' + String(s.step).padStart(2,'0') + '</b> of ' + String(STEPS.length).padStart(2,'0');
+  $('hStep').innerHTML = 'STEP <b>' + String(cur + 1).padStart(2,'0') + '</b> of ' + String(steps.length).padStart(2,'0');
 
   $('dDirections').textContent = s.directions || '\u2014';
   fillList($('dParts'), s.parts);
@@ -538,7 +663,7 @@ function applyStep(i, opts) {
   updateResetPill();
 
   $('prev').disabled = cur === 0;
-  $('next').disabled = cur === STEPS.length - 1;
+  $('next').disabled = cur === steps.length - 1;
   app.querySelectorAll('#rail .tick').forEach((t, idx) => {
     t.classList.toggle('cur', idx === cur);
     t.classList.toggle('done', idx < cur);
@@ -595,7 +720,7 @@ function setHighlight(entry, on) {
 function updateResetPill() { $('resetView').classList.toggle('show', deviated); }
 
 $('resetView').addEventListener('click', () => {
-  const s = STEPS[cur];
+  const s = steps[cur];
   goToCamera(s.camera);
   if (!authorMode) controls.enabled = s.camera.controlsEnabled !== false;
   deviated = false;
@@ -603,12 +728,13 @@ $('resetView').addEventListener('click', () => {
 });
 
 /* ========================= nav + rail ========================= */
-function buildRail() {
+function rebuildRail() {
   const rail = $('rail');
-  STEPS.forEach((s, i) => {
+  rail.innerHTML = '';
+  steps.forEach((s, i) => {
     const b = document.createElement('button');
     b.className = 'tick';
-    b.title = 'Step ' + s.step + ': ' + s.subassembly;
+    b.title = 'Step ' + (i + 1) + ': ' + s.subassembly;
     b.setAttribute('aria-label', b.title);
     b.addEventListener('click', () => applyStep(i));
     rail.appendChild(b);
@@ -638,7 +764,7 @@ function wireUI() {
     else app.requestFullscreen && app.requestFullscreen();
   });
   document.addEventListener('fullscreenchange', () => {
-    $('fsToggle').innerHTML = document.fullscreenElement ? '&#x2715; EXIT' : '&#x26F6; FULL';
+    $('fsToggle').innerHTML = document.fullscreenElement === app ? '&#x2715; EXIT' : '&#x26F6; FULL';
   });
 
   // Author mode gated behind ?author=1 so techs never see it.
@@ -667,6 +793,18 @@ function wireUI() {
     }
     setTimeout(() => $('copyMsg').textContent = '', 2000);
   });
+
+  // write operations
+  if (!connected) {
+    $('opNote').hidden = false;
+    ['btnSave','btnAdd','btnSplit','btnDelete','btnMerge'].forEach(id => $(id).disabled = true);
+  } else {
+    $('btnSave').addEventListener('click', opSave);
+    $('btnAdd').addEventListener('click', opAdd);
+    $('btnSplit').addEventListener('click', opSplit);
+    $('btnDelete').addEventListener('click', opDelete);
+    $('btnMerge').addEventListener('click', opMerge);
+  }
 }
 
 /* ========================= author mode ========================= */
@@ -674,8 +812,8 @@ function setAuthorMode(on) {
   authorMode = on;
   $('authorToggle').dataset.on = on ? '1' : '0';
   $('author').hidden = !on;
-  controls.enabled = on ? true : (STEPS[cur].camera.controlsEnabled !== false);
-  if (on) syncAuthorPanelToStep(STEPS[cur]);
+  controls.enabled = on ? true : (steps[cur] && steps[cur].camera.controlsEnabled !== false);
+  if (on && steps[cur]) syncAuthorPanelToStep(steps[cur]);
 }
 
 function meshRow(name, showCls, hiCls, showChecked) {
@@ -697,7 +835,28 @@ function buildMeshTables() {
   $('arrowEmpty').hidden = arrows.length > 0;
 }
 
+function rebuildMergeList() {
+  const box = $('mergeRows');
+  box.innerHTML = '';
+  steps.forEach((s, i) => {
+    const label = document.createElement('label');
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.className = 'mSel';
+    cb.dataset.stepId = s.stepId;
+    label.appendChild(cb);
+    label.appendChild(document.createTextNode(
+      String(i + 1).padStart(2, '0') + ' \u00b7 ' + s.subassembly + ' \u00b7 ' + s.stepId));
+    box.appendChild(label);
+  });
+}
+
 function syncAuthorPanelToStep(s) {
+  $('aSub').value = s.subassembly || '';
+  $('aDir').value = s.directions || '';
+  $('aParts').value = (s.parts || []).join('\n');
+  $('aTools').value = (s.tools || []).join('\n');
+
   $('aControls').checked = s.camera.controlsEnabled !== false;
   $('aTransition').value = s.camera.transition || 'smooth';
   $('aFov').value = s.camera.fov || 50;
@@ -737,23 +896,31 @@ function previewAuthorSelections() {
   scene.background.set($('aBg').value);
 }
 
-function captureView() {
+// Everything needed to persist the currently-authored state of a step.
+function collectFields() {
   const sel = readAuthorSelections();
-  const out = {
+  return {
+    subassembly: $('aSub').value.trim(),
+    directions: $('aDir').value.trim(),
+    partsNeeded: $('aParts').value.trim(),
+    toolsNeeded: $('aTools').value.trim(),
+    visibleParts: sel.visibleParts,
+    highlightedParts: sel.highlightedParts,
+    visibleArrows: sel.visibleArrows,
+    highlightedArrows: sel.highlightedArrows,
     camera: {
       position: { x: r3(camera.position.x), y: r3(camera.position.y), z: r3(camera.position.z) },
       target:   { x: r3(controls.target.x), y: r3(controls.target.y), z: r3(controls.target.z) },
       fov: Number($('aFov').value) || 50,
-      controlsEnabled: $('aControls').checked,
-      transition: $('aTransition').value
+      controlsEnabled: $('aControls').checked
     },
     backgroundColor: $('aBg').value,
-    visibleParts: sel.visibleParts,
-    highlightedParts: sel.highlightedParts,
-    visibleArrows: sel.visibleArrows,
-    highlightedArrows: sel.highlightedArrows
+    transition: $('aTransition').value
   };
-  $('capOut').value = JSON.stringify(out, null, 2);
+}
+
+function captureView() {
+  $('capOut').value = JSON.stringify(collectFields(), null, 2);
 }
 const r3 = n => Math.round(n * 1000) / 1000;
 
@@ -762,6 +929,110 @@ function updateCamReadout() {
     'pos  ' + r3(camera.position.x) + ', ' + r3(camera.position.y) + ', ' + r3(camera.position.z) + '\n' +
     'tgt  ' + r3(controls.target.x) + ', ' + r3(controls.target.y) + ', ' + r3(controls.target.z) + '\n' +
     'fov  ' + r3(camera.fov);
+}
+
+/* ========================= write operations ========================= */
+function opMsg(text, isErr) {
+  const el = $('opMsg');
+  el.textContent = text;
+  el.classList.toggle('err', !!isErr);
+}
+
+function setBusy(b) {
+  busy = b;
+  ['btnSave','btnAdd','btnSplit','btnDelete','btnMerge'].forEach(id => $(id).disabled = b);
+}
+
+// Re-fetch steps after any write, rebuild UI, land on focusStepId.
+async function refreshAfterWrite(focusStepId) {
+  const b = await apiGet({ action: 'bundle', product: cfg.product });
+  if (!b.ok) throw new Error(b.error || 'refresh failed');
+  steps = b.steps.map(normalizeStep);
+  rebuildRail();
+  rebuildMergeList();
+  let idx = steps.findIndex(s => s.stepId === focusStepId);
+  if (idx < 0) idx = Math.min(cur, steps.length - 1);
+  applyStep(idx, { instant: true });
+}
+
+async function runOp(label, fn) {
+  if (busy) return;
+  setBusy(true);
+  opMsg(label + '\u2026');
+  try {
+    await fn();
+    opMsg('Done.');
+  } catch (err) {
+    console.error(err);
+    opMsg(String(err.message || err), true);
+  } finally {
+    setBusy(false);
+    setTimeout(() => { if (!busy) opMsg(''); }, 3000);
+  }
+}
+
+function opSave() {
+  return runOp('Saving', async () => {
+    const s = steps[cur];
+    const fields = collectFields();
+    fields.order = s.order;                       // keep position on plain edits
+    const res = await apiPost({ action: 'edit', stepId: s.stepId, fields });
+    if (!res.ok) throw new Error(res.error);
+    await refreshAfterWrite(s.stepId);
+  });
+}
+
+function opAdd() {
+  return runOp('Adding step', async () => {
+    const s = steps[cur];
+    const next = steps[cur + 1];
+    const fields = collectFields();
+    // Fractional order: land between the current step and the next one.
+    fields.order = next ? (s.order + next.order) / 2 : (s.order || cur + 1) + 1;
+    const res = await apiPost({ action: 'create', fields });
+    if (!res.ok) throw new Error(res.error);
+    await refreshAfterWrite(res.stepId);
+  });
+}
+
+function opSplit() {
+  return runOp('Splitting', async () => {
+    const s = steps[cur];
+    const res = await apiPost({ action: 'split', stepId: s.stepId, copies: 2 });
+    if (!res.ok) throw new Error(res.error);
+    await refreshAfterWrite(res.stepIds[0]);
+  });
+}
+
+function opDelete() {
+  const s = steps[cur];
+  if (!confirm('Delete this step? (It is retired, not erased - the ledger keeps its full history.)')) return;
+  return runOp('Deleting', async () => {
+    const res = await apiPost({ action: 'delete', stepId: s.stepId });
+    if (!res.ok) throw new Error(res.error);
+    await refreshAfterWrite(null);
+  });
+}
+
+function opMerge() {
+  const ids = [];
+  app.querySelectorAll('.mSel').forEach(cb => { if (cb.checked) ids.push(cb.dataset.stepId); });
+  if (ids.length < 2) { opMsg('Select at least 2 steps to merge.', true); return; }
+
+  return runOp('Merging', async () => {
+    // Starting content = concatenation of the merged steps, in order.
+    const chosen = steps.filter(s => ids.includes(s.stepId));
+    const fields = collectFields();
+    fields.subassembly = chosen[0].subassembly;
+    fields.directions = chosen.map(s => s.directions).filter(Boolean).join('\n\n');
+    fields.partsNeeded = chosen.map(s => (s.parts || []).join('\n')).filter(Boolean).join('\n');
+    fields.toolsNeeded = chosen.map(s => (s.tools || []).join('\n')).filter(Boolean).join('\n');
+    // Camera / visibility / background come from the current authored state
+    // (a merged step needs one view, chosen by the author - not a blend).
+    const res = await apiPost({ action: 'merge', stepIds: ids, fields });
+    if (!res.ok) throw new Error(res.error);
+    await refreshAfterWrite(res.stepId);
+  });
 }
 
 })(); // <-- Closes the IIFE sandbox
