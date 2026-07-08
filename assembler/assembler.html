@@ -163,6 +163,34 @@
     .av-app #hdr .sub { display: none; }
     .av-app .navbtn { min-width: 72px; padding: 12px 14px; }
   }
+
+  /* Subassembly Dropdown Styling */
+  .av-app #hdr .sub { 
+    font-family: inherit; 
+    font-size: .85rem; 
+    color: var(--ink-soft); 
+    background: transparent; 
+    border: none; 
+    border-left: 1px solid var(--line-strong); 
+    padding-left: 14px; 
+    cursor: pointer; 
+    outline: none; 
+  }
+  .av-app #hdr .sub option { 
+    background: var(--panel); 
+    color: var(--ink); 
+  }
+
+  /* iOS Pseudo-Fullscreen Fallback */
+  .av-app.pseudo-fullscreen {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    max-width: none !important;
+    max-height: none !important;
+    z-index: 999999 !important;
+  }
 </style>
 </head>
 <body>
@@ -190,7 +218,8 @@
 
   <header id="hdr">
     <span class="product" id="hProduct">&mdash;</span>
-    <span class="sub" id="hSub">&mdash;</span>
+    <!-- <span class="sub" id="hSub">&mdash;</span> -->
+    <select class="sub" id="hSub" aria-label="Select Subassembly"></select>
     <span class="stepnum" id="hStep">STEP <b>&ndash;</b> of &ndash;</span>
     <button class="hdrbtn" id="authorToggle" title="Toggle author mode">AUTHOR</button>
     <button class="hdrbtn" id="fsToggle" title="Toggle fullscreen">&#x26F6; FULL</button>
@@ -458,6 +487,7 @@ async function boot() {
       steps = b.steps.map(normalizeStep);
       productName = b.product.name;
       if (b.product.modelUrl) modelUrl = b.product.modelUrl;
+      buildSubassemblyDropdown();
     } catch (err) {
       bootError('Could not load steps from the data source.<br><br>' +
         '<code style="font-size:.75em">' + String(err.message || err) + '</code>');
@@ -466,6 +496,7 @@ async function boot() {
   } else {
     steps = DEMO_STEPS.map(normalizeStep);
     productName = 'Demo Product';
+    buildSubassemblyDropdown();
   }
 
   loadModel(modelUrl);
@@ -639,6 +670,25 @@ function stepTween() {
   if (k >= 1) tween = null;
 }
 
+
+function buildSubassemblyDropdown() {
+  const select = $('hSub');
+  select.innerHTML = '';
+  const seen = new Set();
+
+  steps.forEach((s, i) => {
+    if (!seen.has(s.subassembly)) {
+      seen.add(s.subassembly);
+      const opt = document.createElement('option');
+      opt.value = s.subassembly;
+      opt.textContent = s.subassembly;
+      opt.dataset.stepIndex = i;
+      select.appendChild(opt);
+    }
+  });
+}
+
+
 /* ========================= steps ========================= */
 function applyStep(i, opts) {
   opts = opts || {};
@@ -647,7 +697,8 @@ function applyStep(i, opts) {
   const s = steps[cur];
 
   $('hProduct').textContent = productName;
-  $('hSub').textContent = s.subassembly;
+//   $('hSub').textContent = s.subassembly;
+  $('hSub').value = s.subassembly;
   $('hStep').innerHTML = 'STEP <b>' + String(cur + 1).padStart(2,'0') + '</b> of ' + String(steps.length).padStart(2,'0');
 
   $('dDirections').textContent = s.directions || '\u2014';
@@ -758,14 +809,75 @@ function wireUI() {
     $('drawerChevron').innerHTML = open ? '&#9662;' : '&#9656;';
   });
 
-  // fullscreen
+//   // fullscreen
+//   $('fsToggle').addEventListener('click', () => {
+//     if (document.fullscreenElement) document.exitFullscreen();
+//     else app.requestFullscreen && app.requestFullscreen();
+//   });
+//   document.addEventListener('fullscreenchange', () => {
+//     $('fsToggle').innerHTML = document.fullscreenElement === app ? '&#x2715; EXIT' : '&#x26F6; FULL';
+//   });
+  
+// fullscreen (with DOM-breakout mobile fallback)
+  let fsPlaceholder = null;
+
   $('fsToggle').addEventListener('click', () => {
-    if (document.fullscreenElement) document.exitFullscreen();
-    else app.requestFullscreen && app.requestFullscreen();
+    const isNativeFs = document.fullscreenElement || document.webkitFullscreenElement;
+    const isPseudoFs = app.classList.contains('pseudo-fullscreen');
+
+    if (isNativeFs || isPseudoFs) {
+      // Exit Fullscreen
+      if (document.exitFullscreen) document.exitFullscreen();
+      else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+      
+      if (isPseudoFs) {
+        app.classList.remove('pseudo-fullscreen');
+        document.body.style.overflow = ''; // Restore site scrolling
+        
+        // Move app back to its original Squarespace container
+        if (fsPlaceholder && fsPlaceholder.parentNode) {
+          fsPlaceholder.parentNode.insertBefore(app, fsPlaceholder);
+          fsPlaceholder.parentNode.removeChild(fsPlaceholder);
+          fsPlaceholder = null;
+        }
+      }
+      $('fsToggle').innerHTML = '&#x26F6; FULL';
+      onResize(); 
+    } else {
+      // Enter Fullscreen
+      let nativeTriggered = false;
+      if (app.requestFullscreen) { 
+        app.requestFullscreen(); 
+        nativeTriggered = true; 
+      } else if (app.webkitRequestFullscreen) { 
+        app.webkitRequestFullscreen(); 
+        nativeTriggered = true; 
+      }
+      
+      // Fallback for iOS iPhones
+      if (!nativeTriggered) {
+        // Drop a placeholder so we don't ruin the page layout
+        fsPlaceholder = document.createElement('div');
+        fsPlaceholder.style.width = app.offsetWidth + 'px';
+        fsPlaceholder.style.height = app.offsetHeight + 'px';
+        app.parentNode.insertBefore(fsPlaceholder, app);
+        
+        // Break out of the container and attach to the body
+        document.body.appendChild(app);
+        app.classList.add('pseudo-fullscreen');
+        document.body.style.overflow = 'hidden'; // Prevent site from scrolling underneath
+      }
+      $('fsToggle').innerHTML = '&#x2715; EXIT';
+      onResize(); 
+    }
   });
-  document.addEventListener('fullscreenchange', () => {
-    $('fsToggle').innerHTML = document.fullscreenElement === app ? '&#x2715; EXIT' : '&#x26F6; FULL';
-  });
+
+  const handleFsChange = () => {
+    const isFs = document.fullscreenElement === app || document.webkitFullscreenElement === app;
+    $('fsToggle').innerHTML = isFs ? '&#x2715; EXIT' : '&#x26F6; FULL';
+  };
+  document.addEventListener('fullscreenchange', handleFsChange);
+  document.addEventListener('webkitfullscreenchange', handleFsChange);
 
   // Author mode gated behind ?author=1 so techs never see it.
   if (new URLSearchParams(location.search).get('author') === '1') {
@@ -780,7 +892,13 @@ function wireUI() {
     if (v >= 20 && v <= 100) { camera.fov = v; camera.updateProjectionMatrix(); }
   });
   $('aBg').addEventListener('input', () => scene.background.set($('aBg').value));
-
+  
+  $('hSub').addEventListener('change', (e) => {
+  const selectedOption = e.target.options[e.target.selectedIndex];
+  const jumpIndex = parseInt(selectedOption.dataset.stepIndex, 10);
+  if (!isNaN(jumpIndex)) applyStep(jumpIndex);
+    });
+    
   $('aPreview').addEventListener('click', previewAuthorSelections);
   $('aCapture').addEventListener('click', captureView);
   $('aCopy').addEventListener('click', async () => {
