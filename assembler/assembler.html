@@ -43,6 +43,17 @@
 
   .av-app #viewport { position: absolute; inset: 0; overflow: hidden; }
 
+  /* ---------- author framing guide ----------
+     A 9:16 portrait outline centered in the frame, shown only while author
+     mode is active - helps compose shots meant for a phone-portrait tech
+     view. Sized in JS (sizeFrameGuide) since a pure-CSS aspect-ratio box
+     needs a definite starting dimension to size itself against; here we're
+     bounding it by BOTH container width and height at once. */
+  .av-app #frameGuide { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    border: 2px solid var(--accent); border-radius: 24px; background: transparent;
+    pointer-events: none; z-index: 15; }
+  .av-app #frameGuide[hidden] { display: none; }
+
   /* ---------- loading ---------- */
   .av-app #loading { position: absolute; inset: 0; z-index: 100; display: flex; flex-direction: column; gap: 14px;
     align-items: center; justify-content: center; background: var(--bg0); transition: opacity .4s; }
@@ -58,21 +69,10 @@
     background: linear-gradient(to bottom, rgba(14,16,19,.92), rgba(14,16,19,0));
     pointer-events: none; }
   .av-app #hdr > * { pointer-events: auto; }
-  
+
   .av-app #hdr .titles { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
   .av-app #hdr .titles > * { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .av-app #hdr .product { font-weight: 700; font-size: .95rem; letter-spacing: .01em; }
-  /* .av-app #hdr .sub { 
-    font-family: inherit; font-size: .78rem; color: var(--ink-soft); 
-    background: transparent; cursor: pointer; outline: none; 
-    max-width: 250px; 
-    padding: 3px 8px; 
-    margin-left: -8px;
-    border: 1px solid var(--accent); 
-    border-radius: 6px;
-  }
-  .av-app #hdr .sub:focus { box-shadow: 0 0 0 1px var(--accent); } 
-  .av-app #hdr .sub option { background: var(--panel); color: var(--ink); } */
 
   .av-app #hdr .stepnum { margin-left: auto; font-family: var(--font-mono); font-size: .78rem; color: var(--ink-soft); }
   .av-app #hdr .stepnum b { color: var(--accent); font-weight: 500; }
@@ -89,22 +89,22 @@
     background: rgba(22, 24, 28, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--line-strong); border-radius: 12px;
     padding: 6px 12px 12px; box-shadow: 0 18px 48px rgba(0,0,0,.6);
-    transition: left 0.3s cubic-bezier(0.2, 0, 0, 1), right 0.3s, top 0.3s cubic-bezier(0.2, 0, 0, 1), bottom 0.3s;
+    transition: left 0.5s cubic-bezier(0.2, 0, 0, 1), right 0.5s cubic-bezier(0.2, 0, 0, 1), top 0.5s cubic-bezier(0.2, 0, 0, 1), bottom 0.5s cubic-bezier(0.2, 0, 0, 1);
   }
   .av-app #floating-ui.dragging { transition: none; opacity: 0.95; }
 
-  /* .av-app #dragHandle { width: 100%; height: 18px; cursor: grab; display: flex; align-items: center; justify-content: center; }
-  .av-app #dragHandle:active { cursor: grabbing; }
-  .av-app #dragHandle div { width: 36px; height: 4px; background: var(--line-strong); border-radius: 2px; } */
-  
-  /* Chunkier drag handle */
-  .av-app #dragHandle { width: 100%; height: 32px; padding-top: 2px; cursor: grab; display: flex; align-items: center; justify-content: center; color: var(--accent);}
+  /* Chunkier drag handle.
+     touch-action:none is THE mobile-scroll fix: the browser decides whether a
+     touch scrolls the page BEFORE any JS runs, so it must be declared in CSS
+     up front - setting it inside pointerdown is always too late. */
+  .av-app #dragHandle { width: 100%; height: 32px; padding-top: 2px; cursor: grab; display: flex; align-items: center; justify-content: center; color: var(--accent);
+    touch-action: none; }
   .av-app #dragHandle:active { cursor: grabbing; }
   .av-app #dragHandle div { width: 50px; height: 6px; background: var(--line-strong); border-radius: 3px; transition: background 0.2s; }
   .av-app #dragHandle:hover div { background: var(--accent); }
-  
+
   .av-app .f-row { display: flex; align-items: center; gap: 8px; width: 100%; }
-  
+
   /* Nav row inside cluster */
   .av-app .navbtn { flex: 0 0 auto; padding: 10px 14px; font-size: .85rem; font-weight: 600; cursor: pointer;
     border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel); color: var(--ink);
@@ -113,7 +113,7 @@
   .av-app .navbtn:disabled { opacity: .35; cursor: default; }
   .av-app #next { background: var(--accent); border-color: var(--accent); color: #16181c; }
   .av-app #next:hover:not(:disabled) { background: #ffa033; }
-  
+
   .av-app #rail { flex: 1; display: flex; align-items: center; gap: 5px; min-width: 0; padding: 0 4px; }
   .av-app #rail .tick { flex: 1; height: 4px; border-radius: 2px; background: var(--panel-2); border: 0; padding: 0;
     cursor: pointer; transition: background .2s, height .2s; min-width: 4px; }
@@ -127,29 +127,32 @@
     border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel-2); color: var(--ink); }
   .av-app #resetView.show { display: flex; }
   .av-app #resetView::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
-  
+
   .av-app #drawerToggle { font-size: .78rem; font-weight: 500; cursor: pointer;
     display: flex; align-items: center; justify-content: center; gap: 7px; padding: 8px 14px;
-    border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel-2); color: var(--ink); }
+    border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel-2); color: var(--ink);
+    min-width: 0; }
+  .av-app #drawerLabel { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis;
+    white-space: nowrap; text-align: left; }
 
   /* Drawer body & Resize handle */
   .av-app #drawerBody { flex: 1; width: 100%; margin-top: 4px; overflow: auto; background: transparent;
     padding: 0 4px; box-sizing: border-box; }
-  
+
   .av-app #resizeHandle {
     position: absolute; bottom: 0; right: 0; width: 28px; height: 28px; cursor: nwse-resize;
     display: flex; align-items: flex-end; justify-content: flex-end; padding: 7px; z-index: 10;
+    touch-action: none;   /* same fix as the drag handle */
   }
   .av-app #resizeHandle::after { /* Creates a little angled bracket icon */
     content: ""; width: 20px; height: 20px;
-    border-right: 4px solid var(--accent); /* Now uses your orange accent */
-    border-bottom: 4px solid var(--accent); /* Now uses your orange accent */
-    border-bottom-right-radius: 4px; 
+    border-right: 4px solid var(--accent);
+    border-bottom: 4px solid var(--accent);
+    border-bottom-right-radius: 4px;
     transition: opacity 0.2s;
-    opacity: 0.6; /* Slight transparency for a subtle look */
+    opacity: 0.6;
   }
   .av-app #resizeHandle:hover::after { opacity: 1; }
-  .av-app #resizeHandle:hover::after { border-color: var(--accent); }
 
   .av-app #drawerBody[hidden] { display: none; }
   .av-app #floating-ui details { border-bottom: 1px solid var(--line); }
@@ -163,32 +166,88 @@
   .av-app #floating-ui .body ul { margin: 0; padding-left: 18px; }
   .av-app #floating-ui .body li { margin: 3px 0; }
 
+  /* ---------- author panel ----------
+     (restored: this whole block had been removed, which left the author
+     panel unpositioned and painted UNDER the absolutely-positioned canvas -
+     that is why author mode "disappeared". z-index 40 keeps it above the
+     floating cluster.) */
+  .av-app #author { position: absolute; top: 56px; left: 12px; z-index: 40;
+    width: min(340px, 88%); max-height: calc(100% - 80px); overflow: auto;
+    background: var(--panel); border: 1px solid var(--accent); border-radius: 12px;
+    padding: 14px; box-shadow: 0 18px 48px rgba(0,0,0,.5); }
+  .av-app #author[hidden] { display: none; }
+  .av-app #author h2 { margin: 0 0 2px; font-size: .95rem; font-weight: 700; color: var(--accent);}
+  .av-app #author .hint { font-size: .72rem; color: var(--ink-faint); margin: 0 0 12px; }
+  .av-app #author section { border-top: 1px solid var(--line); padding: 10px 0; }
+  .av-app #author .sec-lbl { font-size: .64rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 8px; }
+  .av-app #author .cam-read { font-family: var(--font-mono); font-size: .68rem; color: var(--ink-soft); line-height: 1.6; white-space: pre; }
+  .av-app #author label.row { display: flex; align-items: center; gap: 8px; font-size: .82rem; padding: 4px 0; }
+  .av-app #author label.col { display: flex; flex-direction: column; gap: 4px; font-size: .7rem; color: var(--ink-soft); padding: 5px 0; }
+  .av-app #author select, .av-app #author input[type=number] { font: inherit; font-size: .8rem; background: var(--panel-2); color: var(--ink);
+    border: 1px solid var(--line-strong); border-radius: 6px; padding: 5px 8px; }
+  .av-app #author input[type=text], .av-app #author textarea { font: inherit; font-size: .78rem; background: var(--panel-2); color: var(--ink);
+    border: 1px solid var(--line-strong); border-radius: 6px; padding: 6px 8px; resize: vertical; }
+  .av-app #author input[type=color] { width: 44px; height: 28px; padding: 2px; border: 1px solid var(--line-strong);
+    border-radius: 6px; background: var(--panel-2); cursor: pointer; }
+  .av-app .ptable { width: 100%; border-collapse: collapse; font-size: .78rem; }
+  .av-app .ptable th { font-size: .62rem; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-faint);
+    text-align: left; padding: 2px 4px 6px; }
+  .av-app .ptable th:nth-child(2), .av-app .ptable th:nth-child(3) { text-align: center; }
+  .av-app .ptable td { padding: 4px; border-top: 1px solid var(--line); }
+  .av-app .ptable td:first-child { font-family: var(--font-mono); font-size: .7rem; word-break: break-all; }
+  .av-app .ptable td:nth-child(2), .av-app .ptable td:nth-child(3) { text-align: center; }
+  .av-app .table-empty { font-size: .74rem; color: var(--ink-faint); font-style: italic; padding: 4px 0; }
+  .av-app .abtn { width: 100%; margin-top: 8px; font-size: .82rem; font-weight: 600; cursor: pointer; padding: 10px;
+    border: 1px solid var(--accent); border-radius: 8px; background: var(--accent); color: #16181c; }
+  .av-app .abtn.ghost { background: transparent; color: var(--accent); }
+  .av-app .abtn.danger { border-color: #a63b2c; background: transparent; color: #ff6b5e; }
+  .av-app .abtn:disabled { opacity: .35; cursor: default; }
+  .av-app .merge-list { display: flex; flex-direction: column; gap: 3px; max-height: 130px; overflow: auto; }
+  .av-app .merge-list label { display: flex; gap: 7px; align-items: center; font-family: var(--font-mono); font-size: .66rem; color: var(--ink-soft); }
+  .av-app .opmsg { font-family: var(--font-mono); font-size: .68rem; min-height: 1em; text-align: center; margin-top: 6px; color: var(--accent); }
+  .av-app .opmsg.err { color: #ff6b5e; }
+  .av-app #capOut { width: 100%; margin-top: 8px; font-family: var(--font-mono); font-size: .66rem; line-height: 1.5;
+    background: var(--panel-2); color: var(--ink); border: 1px solid var(--line-strong); border-radius: 8px;
+    padding: 8px; resize: vertical; min-height: 120px; box-sizing: border-box; }
+  .av-app #copyMsg { font-family: var(--font-mono); font-size: .68rem; color: var(--accent); min-height: 1em; text-align: center; margin-top: 4px; }
+
+  /* ---------- op toast ----------
+     Mirrors #opMsg's text but floats above everything, fixed to the
+     viewer frame - so it's visible even when the author panel is
+     scrolled down past the Save/structure section. */
+  .av-app #opToast { position: absolute; top: 60px; left: 50%; transform: translateX(-50%) translateY(-8px);
+    z-index: 90; padding: 9px 18px; border-radius: 999px; font-size: .8rem; font-weight: 600;
+    background: var(--accent); color: #16181c; box-shadow: 0 10px 28px rgba(0,0,0,.45);
+    opacity: 0; pointer-events: none; transition: opacity .2s, transform .2s; white-space: nowrap; }
+  .av-app #opToast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .av-app #opToast.err { background: #ff6b5e; color: #2a1210; }
+
   @media (max-width: 640px) {
     .av-app #hdr .stepnum { display: none; } /* Hide step text on very narrow screens to save header space */
   }
 
   /* Subassembly Dropdown Styling */
-  .av-app #hdr .sub { 
-    font-family: inherit; 
-    font-size: .85rem; 
-    color: var(--ink); 
-    background: transparent; 
+  .av-app #hdr .sub {
+    font-family: inherit;
+    font-size: .85rem;
+    color: var(--ink);
+    background: transparent;
     /* Permanent accent border */
-    border: 1px solid var(--accent); 
+    border: 1px solid var(--accent);
     border-radius: 6px;
-    padding: 3px 10px; 
+    padding: 3px 10px;
     margin-left: 10px;
-    cursor: pointer; 
-    outline: none; 
+    cursor: pointer;
+    outline: none;
     max-width: 250px;
-    appearance: none; 
+    appearance: none;
   }
-  .av-app #hdr .sub:focus { 
-    box-shadow: 0 0 5px rgba(255, 138, 0, 0.4); 
+  .av-app #hdr .sub:focus {
+    box-shadow: 0 0 5px rgba(255, 138, 0, 0.4);
   }
-  .av-app #hdr .sub option { 
-    background: var(--panel); 
-    color: var(--ink); 
+  .av-app #hdr .sub option {
+    background: var(--panel);
+    color: var(--ink);
   }
 
   /* iOS Pseudo-Fullscreen Fallback */
@@ -213,12 +272,23 @@
        data-product    : a Product name from the Products tab.        DEFINE PRODUCT
      Multiple .av-app blocks per page are supported - each pairs with
      the script block that follows it.
-     ============================================================ -->
-<div class="av-app"
+     SECURITY: anything committed to a PUBLIC repo exposes these values.
+     Keep this file's attributes EMPTY in the repo and fill them in only
+     where the block is actually deployed (e.g. the Squarespace code block).
+
+
+     <div class="av-app"
      data-script-url="https://script.google.com/macros/s/AKfycby9CxNq95sjOsVgT5jgIwM8YzqyywvxNyt19pxQtFyBmvaJ8OvImVVGnZvZ7SeUauZf/exec"
      data-token="Christiansen"
      data-product="Demo Product"> 
   <div id="viewport"></div>
+     ============================================================ -->
+<div class="av-app"
+     data-script-url="https://script.google.com/macros/s/AKfycby9CxNq95sjOsVgT5jgIwM8YzqyywvxNyt19pxQtFyBmvaJ8OvImVVGnZvZ7SeUauZf/exec"
+     data-token="Christiansen"
+     data-product="Demo Product">
+  <div id="viewport"></div>
+  <div id="frameGuide" hidden></div>
 
   <div id="loading">
     <div class="bar"><i id="loadBar"></i></div>
@@ -236,9 +306,11 @@
     <button class="hdrbtn" id="fsToggle" title="Toggle fullscreen">&#x26F6; FULL</button>
   </header>
 
+  <div id="opToast"></div>
+
   <div id="floating-ui">
     <div id="dragHandle" title="Drag to reposition"><div></div></div>
-    
+
     <div class="f-row nav-row">
       <button class="navbtn" id="prev">&lsaquo;</button>
       <div id="rail" role="tablist" aria-label="Steps"></div>
@@ -247,10 +319,10 @@
 
     <div class="f-row action-row">
       <button id="resetView">Reset view</button>
-      <button id="drawerToggle" aria-expanded="true">Step info <span id="drawerChevron">&#9662;</span></button>
+      <button id="drawerToggle" aria-expanded="false"><span id="drawerLabel">Step Info</span> <span id="drawerChevron">&#9656;</span></button>
     </div>
 
-    <div id="drawerBody">
+    <div id="drawerBody" hidden>
       <details open>
         <summary>Directions</summary>
         <div class="body" id="dDirections">&mdash;</div>
@@ -264,7 +336,7 @@
         <div class="body"><ul id="dTools"></ul></div>
       </details>
     </div>
-    
+
     <div id="resizeHandle" title="Drag to resize"></div>
   </div>
 
@@ -345,12 +417,6 @@
       <div id="copyMsg"></div>
     </section>
   </aside>
-
-  <!-- <nav id="nav">
-    <button class="navbtn" id="prev">&lsaquo; Prev</button>
-    <div id="rail" role="tablist" aria-label="Steps"></div>
-    <button class="navbtn" id="next">Next &rsaquo;</button>
-  </nav> -->
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
@@ -424,6 +490,9 @@ let tween = null;
 let deviated = false;
 let authorMode = false;
 let busy = false;
+let snapToCorner = null;         // assigned in setupDraggableUI; instance-local
+                                 // (was window.snapToCorner, which each new
+                                 // instance overwrote - breaking multi-instance)
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 // Find the first .av-app container on the page that hasn't been claimed yet
@@ -489,13 +558,13 @@ function init() {
   new ResizeObserver(() => {
     if (resizeQueued) return;
     resizeQueued = true;
-    requestAnimationFrame(() => { 
-      resizeQueued = false; 
-      onResize(); 
-      if (window.snapToCorner) window.snapToCorner(); // <--- Update position when frame changes
+    requestAnimationFrame(() => {
+      resizeQueued = false;
+      onResize();
+      if (snapToCorner) snapToCorner(); // keep the cluster on-screen when the frame changes
     });
   }).observe(app);
-  
+
   setupDraggableUI();
   wireUI();
   animate();
@@ -508,40 +577,48 @@ function setupDraggableUI() {
   const handle = $('dragHandle');
   let isDragging = false;
   let startX, startY, initialLeft, initialTop;
+  let userResized = false;   // once the user picks a size, stop overriding it
   const margin = 12;
 
-  // Snaps the UI to the closest of the 4 corners using CSS positioning 
-  window.snapToCorner = () => {
+  // Snaps the UI to the closest of the 4 corners using CSS positioning
+  snapToCorner = () => {
     const cx = el.offsetLeft + el.offsetWidth / 2;
     const cy = el.offsetTop + el.offsetHeight / 2;
     const hw = appW() / 2;
     const hh = appH() / 2;
-    
+
     el.style.left = cx < hw ? margin + 'px' : 'auto';
     el.style.right = cx < hw ? 'auto' : margin + 'px';
-    
+
     // Y-axis snap (Top clear of header (~64px), Bottom at margin)
-    el.style.top = cy < hh ? '64px' : 'auto';
+    el.style.top = cy < hh ? '100px' : 'auto';
     el.style.bottom = cy < hh ? 'auto' : margin + 'px';
-    
-    // Restrict max-height of the drawer so it never overflows the window
-    // $('drawerBody').style.maxHeight = (appH() - 180) + 'px';
-    $('drawerBody').style.maxHeight = (150) + 'px';
+
+    // Never let the cluster be taller than the frame allows.
+    const maxH = appH() - 76 - margin;
+    if (el.offsetHeight > maxH) el.style.height = maxH + 'px';
+    if (el.offsetWidth > appW() - margin * 2) {
+      el.style.width = (appW() - margin * 2) + 'px';
+    }
+
+    // Default drawer cap only until the user resizes; after that their
+    // chosen cluster height governs and the drawer just fills it (flex:1).
+    $('drawerBody').style.maxHeight = userResized
+      ? 'none'
+      : Math.min(240, Math.round(appH() * 0.38)) + 'px';
   };
 
   handle.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return; // Only left click / touch
     isDragging = true;
     el.classList.add('dragging');
-    document.body.style.overflow = 'hidden'; 
-    document.body.style.touchAction = 'none';
-    
+
     // Convert current corner anchors into hard Left/Top pixel coordinates for drag tracking
     const rect = el.getBoundingClientRect();
     const appRect = app.getBoundingClientRect();
     initialLeft = rect.left - appRect.left;
     initialTop = rect.top - appRect.top;
-    
+
     el.style.right = 'auto';
     el.style.bottom = 'auto';
     el.style.left = initialLeft + 'px';
@@ -562,16 +639,14 @@ function setupDraggableUI() {
     if (!isDragging) return;
     isDragging = false;
     el.classList.remove('dragging');
-    document.body.style.overflow = '';
-    document.body.style.touchAction = '';
     handle.releasePointerCapture(e.pointerId);
-    window.snapToCorner(); // Snap on release
+    snapToCorner(); // Snap on release
   };
 
   handle.addEventListener('pointerup', endDrag);
   handle.addEventListener('pointercancel', endDrag);
-  
-  // --- New Resize Handle Logic ---
+
+  // --- Resize Handle Logic ---
   const resizer = $('resizeHandle');
   let isResizing = false;
   let rsStartW, rsStartH, rsStartX, rsStartY;
@@ -579,11 +654,9 @@ function setupDraggableUI() {
   resizer.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
     isResizing = true;
-    e.stopPropagation(); 
+    e.stopPropagation();
     el.classList.add('dragging');
-    document.body.style.overflow = 'hidden';
-    document.body.style.touchAction = 'none';
-    
+
     rsStartW = el.offsetWidth;
     rsStartH = el.offsetHeight;
     rsStartX = e.clientX;
@@ -593,14 +666,15 @@ function setupDraggableUI() {
 
   resizer.addEventListener('pointermove', (e) => {
     if (!isResizing) return;
+    userResized = true;
     // Calculate new size, enforcing minimum dimensions
-    const newW = Math.max(260, rsStartW + (e.clientX - rsStartX));
+    const newW = Math.max(200, Math.min(appW() - 24, rsStartW + (e.clientX - rsStartX)));
     const newH = Math.min(appH() - 30, Math.max(150, rsStartH + (e.clientY - rsStartY)));
-    
+
     // Override max-width/height limits while dragging
     el.style.width = newW + 'px';
     el.style.maxWidth = 'none';
-    $('drawerBody').style.maxHeight = 'none'; 
+    $('drawerBody').style.maxHeight = 'none';
     el.style.height = newH + 'px';
   });
 
@@ -608,10 +682,8 @@ function setupDraggableUI() {
     if (!isResizing) return;
     isResizing = false;
     el.classList.remove('dragging');
-    document.body.style.overflow = '';
-    document.body.style.touchAction = '';
     resizer.releasePointerCapture(e.pointerId);
-    window.snapToCorner(); // Check if we need to nudge it back onto screen
+    snapToCorner(); // Check if we need to nudge it back onto screen
   };
 
   resizer.addEventListener('pointerup', endResize);
@@ -621,7 +693,7 @@ function setupDraggableUI() {
   setTimeout(() => {
     el.style.top = '64px';
     el.style.right = margin + 'px';
-    window.snapToCorner();
+    snapToCorner();
   }, 50);
 }
 
@@ -638,7 +710,6 @@ async function boot() {
       steps = b.steps.map(normalizeStep);
       productName = b.product.name;
       if (b.product.modelUrl) modelUrl = b.product.modelUrl;
-      buildSubassemblyDropdown();
     } catch (err) {
       bootError('Could not load steps from the data source.<br><br>' +
         '<code style="font-size:.75em">' + String(err.message || err) + '</code>');
@@ -647,9 +718,9 @@ async function boot() {
   } else {
     steps = DEMO_STEPS.map(normalizeStep);
     productName = 'Demo Product';
-    buildSubassemblyDropdown();
   }
 
+  buildSubassemblyDropdown();
   loadModel(modelUrl);
 }
 
@@ -685,6 +756,20 @@ function onResize() {
   camera.aspect = appW() / appH();
   camera.updateProjectionMatrix();
   renderer.setSize(appW(), appH());
+  sizeFrameGuide();
+}
+
+// Fits a 9:16 box inside the frame (80% of height / 90% of width, whichever
+// binds first) and applies it as explicit px so the aspect ratio holds
+// regardless of which constraint won.
+function sizeFrameGuide() {
+  const maxH = appH() * 0.82;
+  const maxW = appW() * 0.9;
+  let h = maxH, w = h * 9 / 16;
+  if (w > maxW) { w = maxW; h = w * 16 / 9; }
+  const g = $('frameGuide');
+  g.style.width = w + 'px';
+  g.style.height = h + 'px';
 }
 
 function loadModel(url) {
@@ -821,7 +906,6 @@ function stepTween() {
   if (k >= 1) tween = null;
 }
 
-
 function buildSubassemblyDropdown() {
   const select = $('hSub');
   select.innerHTML = '';
@@ -839,7 +923,6 @@ function buildSubassemblyDropdown() {
   });
 }
 
-
 /* ========================= steps ========================= */
 function applyStep(i, opts) {
   opts = opts || {};
@@ -848,13 +931,13 @@ function applyStep(i, opts) {
   const s = steps[cur];
 
   $('hProduct').textContent = productName;
-//   $('hSub').textContent = s.subassembly;
   $('hSub').value = s.subassembly;
   $('hStep').innerHTML = 'STEP <b>' + String(cur + 1).padStart(2,'0') + '</b> of ' + String(steps.length).padStart(2,'0');
 
   $('dDirections').textContent = s.directions || '\u2014';
   fillList($('dParts'), s.parts);
   fillList($('dTools'), s.tools);
+  updateDrawerLabel();
 
   applyMeshState(s.visibleParts, s.highlightedParts, s.visibleArrows, s.highlightedArrows);
   setBackground(s.backgroundColor || DEFAULT_BG);
@@ -921,6 +1004,20 @@ function setHighlight(entry, on) {
 /* ========================= reset view ========================= */
 function updateResetPill() { $('resetView').classList.toggle('show', deviated); }
 
+// While collapsed, preview the current step's Directions text on the toggle
+// button itself so a tech can tell what the step says without opening it.
+function updateDrawerLabel() {
+  const label = $('drawerLabel');
+  const collapsed = $('drawerBody').hidden;
+  if (collapsed) {
+    const s = steps[cur];
+    const txt = (s && s.directions && s.directions.trim()) ? s.directions.trim() : 'Step Info';
+    label.textContent = txt;
+  } else {
+    label.textContent = 'Step info';
+  }
+}function updateResetPill() { $('resetView').classList.toggle('show', deviated); }
+
 $('resetView').addEventListener('click', () => {
   const s = steps[cur];
   goToCamera(s.camera);
@@ -953,23 +1050,16 @@ function wireUI() {
   });
 
   const body = $('drawerBody'), tog = $('drawerToggle');
+  updateDrawerLabel(); // set the correct initial label before any step data loads
   tog.addEventListener('click', () => {
     const open = body.hidden;
     body.hidden = !open;
     tog.setAttribute('aria-expanded', String(open));
     $('drawerChevron').innerHTML = open ? '&#9662;' : '&#9656;';
+    updateDrawerLabel();
   });
 
-//   // fullscreen
-//   $('fsToggle').addEventListener('click', () => {
-//     if (document.fullscreenElement) document.exitFullscreen();
-//     else app.requestFullscreen && app.requestFullscreen();
-//   });
-//   document.addEventListener('fullscreenchange', () => {
-//     $('fsToggle').innerHTML = document.fullscreenElement === app ? '&#x2715; EXIT' : '&#x26F6; FULL';
-//   });
-  
-// fullscreen (with DOM-breakout mobile fallback)
+  // fullscreen (with DOM-breakout mobile fallback)
   let fsPlaceholder = null;
 
   $('fsToggle').addEventListener('click', () => {
@@ -980,11 +1070,11 @@ function wireUI() {
       // Exit Fullscreen
       if (document.exitFullscreen) document.exitFullscreen();
       else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
-      
+
       if (isPseudoFs) {
         app.classList.remove('pseudo-fullscreen');
         document.body.style.overflow = ''; // Restore site scrolling
-        
+
         // Move app back to its original Squarespace container
         if (fsPlaceholder && fsPlaceholder.parentNode) {
           fsPlaceholder.parentNode.insertBefore(app, fsPlaceholder);
@@ -993,18 +1083,18 @@ function wireUI() {
         }
       }
       $('fsToggle').innerHTML = '&#x26F6; FULL';
-      onResize(); 
+      onResize();
     } else {
       // Enter Fullscreen
       let nativeTriggered = false;
-      if (app.requestFullscreen) { 
-        app.requestFullscreen(); 
-        nativeTriggered = true; 
-      } else if (app.webkitRequestFullscreen) { 
-        app.webkitRequestFullscreen(); 
-        nativeTriggered = true; 
+      if (app.requestFullscreen) {
+        app.requestFullscreen();
+        nativeTriggered = true;
+      } else if (app.webkitRequestFullscreen) {
+        app.webkitRequestFullscreen();
+        nativeTriggered = true;
       }
-      
+
       // Fallback for iOS iPhones
       if (!nativeTriggered) {
         // Drop a placeholder so we don't ruin the page layout
@@ -1012,14 +1102,14 @@ function wireUI() {
         fsPlaceholder.style.width = app.offsetWidth + 'px';
         fsPlaceholder.style.height = app.offsetHeight + 'px';
         app.parentNode.insertBefore(fsPlaceholder, app);
-        
+
         // Break out of the container and attach to the body
         document.body.appendChild(app);
         app.classList.add('pseudo-fullscreen');
         document.body.style.overflow = 'hidden'; // Prevent site from scrolling underneath
       }
       $('fsToggle').innerHTML = '&#x2715; EXIT';
-      onResize(); 
+      onResize();
     }
   });
 
@@ -1043,13 +1133,13 @@ function wireUI() {
     if (v >= 20 && v <= 100) { camera.fov = v; camera.updateProjectionMatrix(); }
   });
   $('aBg').addEventListener('input', () => scene.background.set($('aBg').value));
-  
+
   $('hSub').addEventListener('change', (e) => {
-  const selectedOption = e.target.options[e.target.selectedIndex];
-  const jumpIndex = parseInt(selectedOption.dataset.stepIndex, 10);
-  if (!isNaN(jumpIndex)) applyStep(jumpIndex);
-    });
-    
+    const selectedOption = e.target.options[e.target.selectedIndex];
+    const jumpIndex = parseInt(selectedOption.dataset.stepIndex, 10);
+    if (!isNaN(jumpIndex)) applyStep(jumpIndex);
+  });
+
   $('aPreview').addEventListener('click', previewAuthorSelections);
   $('aCapture').addEventListener('click', captureView);
   $('aCopy').addEventListener('click', async () => {
@@ -1081,6 +1171,8 @@ function setAuthorMode(on) {
   authorMode = on;
   $('authorToggle').dataset.on = on ? '1' : '0';
   $('author').hidden = !on;
+  $('frameGuide').hidden = !on;
+  if (on) sizeFrameGuide();
   controls.enabled = on ? true : (steps[cur] && steps[cur].camera.controlsEnabled !== false);
   if (on && steps[cur]) syncAuthorPanelToStep(steps[cur]);
 }
@@ -1205,6 +1297,15 @@ function opMsg(text, isErr) {
   const el = $('opMsg');
   el.textContent = text;
   el.classList.toggle('err', !!isErr);
+
+  const toast = $('opToast');
+  if (text) {
+    toast.textContent = text;
+    toast.classList.toggle('err', !!isErr);
+    toast.classList.add('show');
+  } else {
+    toast.classList.remove('show');
+  }
 }
 
 function setBusy(b) {
@@ -1219,6 +1320,7 @@ async function refreshAfterWrite(focusStepId) {
   steps = b.steps.map(normalizeStep);
   rebuildRail();
   rebuildMergeList();
+  buildSubassemblyDropdown();   // subassembly names may have changed
   let idx = steps.findIndex(s => s.stepId === focusStepId);
   if (idx < 0) idx = Math.min(cur, steps.length - 1);
   applyStep(idx, { instant: true });
