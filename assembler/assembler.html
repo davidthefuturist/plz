@@ -62,9 +62,17 @@
   .av-app #hdr .titles { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
   .av-app #hdr .titles > * { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .av-app #hdr .product { font-weight: 700; font-size: .95rem; letter-spacing: .01em; }
-  .av-app #hdr .sub { font-family: inherit; font-size: .78rem; color: var(--ink-soft); 
-    background: transparent; border: none; padding: 0; cursor: pointer; outline: none; margin-left: -2px;}
-  .av-app #hdr .sub option { background: var(--panel); color: var(--ink); }
+  /* .av-app #hdr .sub { 
+    font-family: inherit; font-size: .78rem; color: var(--ink-soft); 
+    background: transparent; cursor: pointer; outline: none; 
+    max-width: 250px; 
+    padding: 3px 8px; 
+    margin-left: -8px;
+    border: 1px solid var(--accent); 
+    border-radius: 6px;
+  }
+  .av-app #hdr .sub:focus { box-shadow: 0 0 0 1px var(--accent); } 
+  .av-app #hdr .sub option { background: var(--panel); color: var(--ink); } */
 
   .av-app #hdr .stepnum { margin-left: auto; font-family: var(--font-mono); font-size: .78rem; color: var(--ink-soft); }
   .av-app #hdr .stepnum b { color: var(--accent); font-weight: 500; }
@@ -74,20 +82,26 @@
   .av-app #authorToggle { display: none; }
   .av-app #authorToggle[data-on="1"] { background: var(--accent); border-color: var(--accent); color: #16181c; }
 
-  /* ---------- Floating UI Cluster ---------- */
+  /* ---------- Floating UI Cluster ---------- SET DEFAULT DIMENSIONS HERE! */
   .av-app #floating-ui {
-    position: absolute; z-index: 30; width: min(340px, calc(100% - 24px));
+    position: absolute; z-index: 30; width: min(200px, calc(100% - 24px));
     display: flex; flex-direction: column; gap: 8px;
-    background: rgba(22, 24, 28, 0.85); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    background: rgba(22, 24, 28, 0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--line-strong); border-radius: 12px;
     padding: 6px 12px 12px; box-shadow: 0 18px 48px rgba(0,0,0,.6);
     transition: left 0.3s cubic-bezier(0.2, 0, 0, 1), right 0.3s, top 0.3s cubic-bezier(0.2, 0, 0, 1), bottom 0.3s;
   }
   .av-app #floating-ui.dragging { transition: none; opacity: 0.95; }
 
-  .av-app #dragHandle { width: 100%; height: 18px; cursor: grab; display: flex; align-items: center; justify-content: center; }
+  /* .av-app #dragHandle { width: 100%; height: 18px; cursor: grab; display: flex; align-items: center; justify-content: center; }
   .av-app #dragHandle:active { cursor: grabbing; }
-  .av-app #dragHandle div { width: 36px; height: 4px; background: var(--line-strong); border-radius: 2px; }
+  .av-app #dragHandle div { width: 36px; height: 4px; background: var(--line-strong); border-radius: 2px; } */
+  
+  /* Chunkier drag handle */
+  .av-app #dragHandle { width: 100%; height: 32px; padding-top: 2px; cursor: grab; display: flex; align-items: center; justify-content: center; color: var(--accent);}
+  .av-app #dragHandle:active { cursor: grabbing; }
+  .av-app #dragHandle div { width: 50px; height: 6px; background: var(--line-strong); border-radius: 3px; transition: background 0.2s; }
+  .av-app #dragHandle:hover div { background: var(--accent); }
   
   .av-app .f-row { display: flex; align-items: center; gap: 8px; width: 100%; }
   
@@ -118,9 +132,25 @@
     display: flex; align-items: center; justify-content: center; gap: 7px; padding: 8px 14px;
     border: 1px solid var(--line-strong); border-radius: 8px; background: var(--panel-2); color: var(--ink); }
 
-  /* Drawer body inside cluster */
-  .av-app #drawerBody { width: 100%; margin-top: 4px; overflow: auto; background: transparent;
+  /* Drawer body & Resize handle */
+  .av-app #drawerBody { flex: 1; width: 100%; margin-top: 4px; overflow: auto; background: transparent;
     padding: 0 4px; box-sizing: border-box; }
+  
+  .av-app #resizeHandle {
+    position: absolute; bottom: 0; right: 0; width: 28px; height: 28px; cursor: nwse-resize;
+    display: flex; align-items: flex-end; justify-content: flex-end; padding: 7px; z-index: 10;
+  }
+  .av-app #resizeHandle::after { /* Creates a little angled bracket icon */
+    content: ""; width: 20px; height: 20px;
+    border-right: 4px solid var(--accent); /* Now uses your orange accent */
+    border-bottom: 4px solid var(--accent); /* Now uses your orange accent */
+    border-bottom-right-radius: 4px; 
+    transition: opacity 0.2s;
+    opacity: 0.6; /* Slight transparency for a subtle look */
+  }
+  .av-app #resizeHandle:hover::after { opacity: 1; }
+  .av-app #resizeHandle:hover::after { border-color: var(--accent); }
+
   .av-app #drawerBody[hidden] { display: none; }
   .av-app #floating-ui details { border-bottom: 1px solid var(--line); }
   .av-app #floating-ui details:last-child { border-bottom: 0; }
@@ -141,13 +171,20 @@
   .av-app #hdr .sub { 
     font-family: inherit; 
     font-size: .85rem; 
-    color: var(--ink-soft); 
+    color: var(--ink); 
     background: transparent; 
-    border: none; 
-    border-left: 1px solid var(--line-strong); 
-    padding-left: 14px; 
+    /* Permanent accent border */
+    border: 1px solid var(--accent); 
+    border-radius: 6px;
+    padding: 3px 10px; 
+    margin-left: 10px;
     cursor: pointer; 
     outline: none; 
+    max-width: 250px;
+    appearance: none; 
+  }
+  .av-app #hdr .sub:focus { 
+    box-shadow: 0 0 5px rgba(255, 138, 0, 0.4); 
   }
   .av-app #hdr .sub option { 
     background: var(--panel); 
@@ -227,6 +264,8 @@
         <div class="body"><ul id="dTools"></ul></div>
       </details>
     </div>
+    
+    <div id="resizeHandle" title="Drag to resize"></div>
   </div>
 
   <aside id="author" hidden>
@@ -486,13 +525,16 @@ function setupDraggableUI() {
     el.style.bottom = cy < hh ? 'auto' : margin + 'px';
     
     // Restrict max-height of the drawer so it never overflows the window
-    $('drawerBody').style.maxHeight = (appH() - 180) + 'px';
+    // $('drawerBody').style.maxHeight = (appH() - 180) + 'px';
+    $('drawerBody').style.maxHeight = (150) + 'px';
   };
 
   handle.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return; // Only left click / touch
     isDragging = true;
     el.classList.add('dragging');
+    document.body.style.overflow = 'hidden'; 
+    document.body.style.touchAction = 'none';
     
     // Convert current corner anchors into hard Left/Top pixel coordinates for drag tracking
     const rect = el.getBoundingClientRect();
@@ -520,6 +562,8 @@ function setupDraggableUI() {
     if (!isDragging) return;
     isDragging = false;
     el.classList.remove('dragging');
+    document.body.style.overflow = '';
+    document.body.style.touchAction = '';
     handle.releasePointerCapture(e.pointerId);
     window.snapToCorner(); // Snap on release
   };
@@ -527,6 +571,52 @@ function setupDraggableUI() {
   handle.addEventListener('pointerup', endDrag);
   handle.addEventListener('pointercancel', endDrag);
   
+  // --- New Resize Handle Logic ---
+  const resizer = $('resizeHandle');
+  let isResizing = false;
+  let rsStartW, rsStartH, rsStartX, rsStartY;
+
+  resizer.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    isResizing = true;
+    e.stopPropagation(); 
+    el.classList.add('dragging');
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+    
+    rsStartW = el.offsetWidth;
+    rsStartH = el.offsetHeight;
+    rsStartX = e.clientX;
+    rsStartY = e.clientY;
+    resizer.setPointerCapture(e.pointerId);
+  });
+
+  resizer.addEventListener('pointermove', (e) => {
+    if (!isResizing) return;
+    // Calculate new size, enforcing minimum dimensions
+    const newW = Math.max(260, rsStartW + (e.clientX - rsStartX));
+    const newH = Math.min(appH() - 30, Math.max(150, rsStartH + (e.clientY - rsStartY)));
+    
+    // Override max-width/height limits while dragging
+    el.style.width = newW + 'px';
+    el.style.maxWidth = 'none';
+    $('drawerBody').style.maxHeight = 'none'; 
+    el.style.height = newH + 'px';
+  });
+
+  const endResize = (e) => {
+    if (!isResizing) return;
+    isResizing = false;
+    el.classList.remove('dragging');
+    document.body.style.overflow = '';
+    document.body.style.touchAction = '';
+    resizer.releasePointerCapture(e.pointerId);
+    window.snapToCorner(); // Check if we need to nudge it back onto screen
+  };
+
+  resizer.addEventListener('pointerup', endResize);
+  resizer.addEventListener('pointercancel', endResize);
+
   // Set initial position (Top Right) shortly after load
   setTimeout(() => {
     el.style.top = '64px';
